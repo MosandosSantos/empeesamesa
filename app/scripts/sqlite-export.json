@@ -1,0 +1,331 @@
+{
+  "attendance": [],
+  "categoria": [
+    {
+      "id": "22793f3c-e078-44a5-8f63-8fb851a648be",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Mensalidades",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    },
+    {
+      "id": "fac2934c-3bba-4b95-8e9c-3d9144529228",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Suprimentos",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    },
+    {
+      "id": "9b184943-530d-498f-a2dc-87640c38034f",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Doacoes",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    },
+    {
+      "id": "1f5aa1b3-9772-490c-b8cd-df21423bdc4f",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Manutencao",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    },
+    {
+      "id": "7ed33f3e-a488-484d-9ba9-e040707437ac",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Eventos",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    },
+    {
+      "id": "a65df389-fd6a-4f55-923d-7407e664a36c",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Aluguel",
+      "createdAt": 1766101908347,
+      "updatedAt": 1766101908347
+    }
+  ],
+  "inventory_item": [
+    {
+      "id": "2f7cfc64-252b-4a2f-ab54-0b3acc3c62d3",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "sku": "AV-001",
+      "name": "Avental Ritualistico",
+      "unit": "un",
+      "category": "Paramentos",
+      "location": "Sala de paramentos",
+      "minQty": 5,
+      "qtyOnHand": 10,
+      "avgCost": 5,
+      "lastPurchaseCost": 5,
+      "assignedToMemberId": null,
+      "notes": null,
+      "createdById": "8fd2df7a-f30a-43f4-823d-983a9be4eb1c",
+      "createdByName": "admin@lojamaconica.com.br",
+      "updatedById": "8fd2df7a-f30a-43f4-823d-983a9be4eb1c",
+      "updatedByName": "admin@lojamaconica.com.br",
+      "archivedAt": null,
+      "archivedById": null,
+      "archivedByName": null,
+      "archiveReason": null,
+      "createdAt": 1766101908465,
+      "updatedAt": 1766101908465
+    }
+  ],
+  "inventory_movement": [
+    {
+      "id": "7465ec43-e13f-47a9-b4d1-92e2f3dd616c",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "itemId": "2f7cfc64-252b-4a2f-ab54-0b3acc3c62d3",
+      "type": "IN",
+      "qty": 10,
+      "unitCost": 5,
+      "movementValue": 50,
+      "qtyBefore": 0,
+      "qtyAfter": 10,
+      "avgCostBefore": 0,
+      "avgCostAfter": 5,
+      "reason": "Saldo inicial",
+      "createdById": "8fd2df7a-f30a-43f4-823d-983a9be4eb1c",
+      "createdByName": "admin@lojamaconica.com.br",
+      "ip": null,
+      "userAgent": null,
+      "createdAt": 1766101908473
+    }
+  ],
+  "lancamento": [
+    {
+      "id": "7f654e2a-d02e-4a03-b9b1-34152a0c4244",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "tipo": "RECEITA",
+      "categoriaId": "22793f3c-e078-44a5-8f63-8fb851a648be",
+      "descricao": "Mensalidades dezembro/2025",
+      "valorPrevisto": 5000.0,
+      "valorPago": 3500.0,
+      "dataVencimento": 1767139200000,
+      "dataPagamento": 1765756800000,
+      "status": "PARCIAL",
+      "formaPagamento": "PIX",
+      "anexo": null,
+      "createdAt": 1766101908445,
+      "updatedAt": 1766101908445
+    },
+    {
+      "id": "14359617-ea75-4239-8519-f4fb6d111870",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "tipo": "DESPESA",
+      "categoriaId": "a65df389-fd6a-4f55-923d-7407e664a36c",
+      "descricao": "Aluguel do templo - Janeiro/2026",
+      "valorPrevisto": 2500.0,
+      "valorPago": 0.0,
+      "dataVencimento": 1768003200000,
+      "dataPagamento": null,
+      "status": "ABERTO",
+      "formaPagamento": null,
+      "anexo": null,
+      "createdAt": 1766101908456,
+      "updatedAt": 1766101908456
+    }
+  ],
+  "loja": [
+    {
+      "id": "be3cc8cc-9a1f-4c4d-b92a-a0afd42b6ba1",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "potenciaId": "a2e23f90-7f7d-4587-849d-4a2a7b448c4d",
+      "nomeSimboli": "Cavaleiros da Luz e da Virtude",
+      "numero": 1,
+      "contractNumber": "SAAS-2025-0001",
+      "mensalidadeAtiva": 1,
+      "mensalidadeValidaAte": 1767139200000,
+      "cnpj": "12345678000190",
+      "email": "secretaria@loja001.org.br",
+      "telefone": "+5521987654321",
+      "website": "https://loja001.org.br",
+      "enderecoLogradouro": "Rua Masonica",
+      "enderecoNumero": "777",
+      "enderecoComplemento": null,
+      "enderecoBairro": "Centro",
+      "enderecoCidade": "Rio de Janeiro",
+      "enderecoUf": "RJ",
+      "enderecoCep": "20010-000",
+      "dataFundacao": -624326400000,
+      "situacao": "ATIVA",
+      "observacoes": "Loja fundadora do sistema",
+      "ritoId": "c23b1647-11cb-46b6-8267-79ede2a381fe",
+      "createdAt": 1766101908245,
+      "updatedAt": 1766101908245,
+      "contatoNome": "Maria Andrade"
+    },
+    {
+      "id": "3ed4ef8c-ae67-4b6b-b91d-80d06c64a2a3",
+      "tenantId": "9bce1a5a-af5f-492d-ac31-df0780d464ce",
+      "potenciaId": "a2e23f90-7f7d-4587-849d-4a2a7b448c4d",
+      "nomeSimboli": "Aurora do Oriente",
+      "numero": 22,
+      "contractNumber": "SAAS-2025-0022",
+      "mensalidadeAtiva": 0,
+      "mensalidadeValidaAte": 1735603200000,
+      "cnpj": null,
+      "email": null,
+      "telefone": null,
+      "website": null,
+      "enderecoLogradouro": null,
+      "enderecoNumero": null,
+      "enderecoComplemento": null,
+      "enderecoBairro": null,
+      "enderecoCidade": "Curitiba",
+      "enderecoUf": "PR",
+      "enderecoCep": null,
+      "dataFundacao": null,
+      "situacao": "ADORMECIDA",
+      "observacoes": null,
+      "ritoId": "5fc33061-7d1c-4d3f-add9-1d3886131066",
+      "createdAt": 1766101908259,
+      "updatedAt": 1766101908259,
+      "contatoNome": "Carlos Mendes"
+    }
+  ],
+  "meeting": [],
+  "member": [
+    {
+      "id": "458ba6ee-52de-45c1-a0de-ac2340d30d77",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "lojaId": "be3cc8cc-9a1f-4c4d-b92a-a0afd42b6ba1",
+      "lojaAtualNome": "Cavaleiros da Luz e da Virtude",
+      "lojaAtualNumero": "1",
+      "dataAdmissao": 1579046400000,
+      "tipoAdmissao": "INIC",
+      "numeroFiliado": "2020001",
+      "nomeCompleto": "Joao da Silva Santos",
+      "dataNascimento": 327628800000,
+      "pai": "Jose Santos",
+      "mae": "Maria Silva Santos",
+      "naturalCidade": "Sao Paulo",
+      "naturalUf": "SP",
+      "nacionalidade": "Brasileira",
+      "estadoCivil": "CASADO",
+      "identidadeNumero": "12.345.678-9",
+      "orgaoEmissor": "SSP-SP",
+      "dataEmissao": 1268179200000,
+      "cpf": "12345678901",
+      "email": "joao.silva@example.com",
+      "celular": "+5511987654321",
+      "telefoneUrgencia": "+5511912345678",
+      "enderecoLogradouro": "Rua das Flores, 123",
+      "enderecoCep": "01234-567",
+      "enderecoBairro": "Centro",
+      "enderecoCidade": "Sao Paulo",
+      "enderecoUf": "SP",
+      "escolaridade": "TERCEIRO_GRAU",
+      "dataIniciacao": 1579046400000,
+      "lojaIniciacaoNome": "Loja Padrao",
+      "lojaIniciacaoNumero": "001",
+      "potenciaIniciacaoId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "dataPassagem": null,
+      "lojaPassagemNome": null,
+      "lojaPassagemNumero": null,
+      "potenciaPassagemId": null,
+      "dataElevacao": null,
+      "lojaElevacaoNome": null,
+      "lojaElevacaoNumero": null,
+      "potenciaElevacaoId": null,
+      "dataInstalacao": null,
+      "lojaInstalacaoNome": null,
+      "lojaInstalacaoNumero": null,
+      "potenciaInstalacaoId": null,
+      "situacao": "ATIVO",
+      "fotoUrl": null,
+      "createdAt": 1766101908338,
+      "updatedAt": 1766101908338,
+      "class": null,
+      "dataCBCS": null,
+      "dataEN": null,
+      "dataMESA": null,
+      "dataEntradaLojaAtual": null,
+      "rito": null
+    }
+  ],
+  "potencia": [
+    {
+      "id": "a2e23f90-7f7d-4587-849d-4a2a7b448c4d",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Grande Loja do Brasil",
+      "sigla": "GLB",
+      "email": "contato@grandeloja.org.br",
+      "telefone": "+5521987654321",
+      "website": "https://grandeloja.org.br",
+      "enderecoLogradouro": "Av. Principal",
+      "enderecoNumero": "1000",
+      "enderecoComplemento": null,
+      "enderecoBairro": null,
+      "enderecoCidade": "Rio de Janeiro",
+      "enderecoUf": "RJ",
+      "enderecoCep": "20000-000",
+      "observacoes": "Potencia principal do sistema",
+      "createdAt": 1766101908225,
+      "updatedAt": 1766101908225
+    }
+  ],
+  "rito": [
+    {
+      "id": "c23b1647-11cb-46b6-8267-79ede2a381fe",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Rito Escoces Retificado",
+      "sigla": "RER",
+      "descricao": "Rito de origem francesa com forte influencia cavalheiresca",
+      "createdAt": 1766101908231,
+      "updatedAt": 1766101908231
+    },
+    {
+      "id": "5fc33061-7d1c-4d3f-add9-1d3886131066",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "nome": "Rito Escoces Antigo e Aceito",
+      "sigla": "REAA",
+      "descricao": "Rito masonico mais difundido no mundo",
+      "createdAt": 1766101908238,
+      "updatedAt": 1766101908238
+    }
+  ],
+  "tenant": [
+    {
+      "id": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "name": "Loja Padrao - RER",
+      "createdAt": 1766101908066,
+      "updatedAt": 1766101908066
+    },
+    {
+      "id": "9bce1a5a-af5f-492d-ac31-df0780d464ce",
+      "name": "Loja Aurora - REAA",
+      "createdAt": 1766101908253,
+      "updatedAt": 1766101908253
+    }
+  ],
+  "user": [
+    {
+      "id": "8fd2df7a-f30a-43f4-823d-983a9be4eb1c",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "email": "admin@lojamaconica.com.br",
+      "passwordHash": "$2b$10$weslcQXxPL.36uIx7QDqQ.rKmPWIq3AsfuOPillCJDFCPHzcRWwTi",
+      "role": "ADMIN",
+      "createdAt": 1766101908143,
+      "updatedAt": 1766101908143
+    },
+    {
+      "id": "960b2272-188e-4380-8a26-c2ea2bfebd1d",
+      "tenantId": "ae6cda35-f90d-4427-9868-9866152ee2c4",
+      "email": "member@lojamaconica.com.br",
+      "passwordHash": "$2b$10$Ntybw/eWUen//pyaCPTJJ.iT32L8QtaHS0.8UwyZOBHZPOCwhhMJW",
+      "role": "MEMBER",
+      "createdAt": 1766101908215,
+      "updatedAt": 1766101908215
+    },
+    {
+      "id": "f4738334-3ba9-452f-bb63-bf4d5c9fcb01",
+      "tenantId": "9bce1a5a-af5f-492d-ac31-df0780d464ce",
+      "email": "admin@aurora.com.br",
+      "passwordHash": "$2b$10$gKb4qUHYnYPqY6V5Sexi1OjBHMsZqwfGwREF5fDLOppAxv4Eia9nW",
+      "role": "ADMIN",
+      "createdAt": 1766101908330,
+      "updatedAt": 1766101908330
+    }
+  ]
+}

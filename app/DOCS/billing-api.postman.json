@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "EsferaORDO Billing API",
+    "description": "Complete API collection for billing/dues management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "TOKEN",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@impessa.com.br\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login to get authentication token. Copy the auth-token from the cookie in the response."
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/auth/me",
+              "host": ["{{BASE_URL}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user information"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Get Billing Summary (Monthly)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/summary?year=2025&type=MONTHLY",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "summary"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "type",
+                  "value": "MONTHLY"
+                }
+              ]
+            },
+            "description": "Get billing summary with KPIs for monthly dues"
+          }
+        },
+        {
+          "name": "Get Billing Summary (Annual)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/summary?year=2025&type=ANNUAL",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "summary"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "type",
+                  "value": "ANNUAL"
+                }
+              ]
+            },
+            "description": "Get billing summary with KPIs for annual fees"
+          }
+        },
+        {
+          "name": "Get Dues Matrix (Monthly)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/dues/matrix?year=2025&type=MONTHLY&page=1&limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "dues", "matrix"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "type",
+                  "value": "MONTHLY"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get paginated matrix of members × months"
+          }
+        },
+        {
+          "name": "Get Dues Matrix with Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/dues/matrix?year=2025&type=MONTHLY&page=1&limit=10&search=silva",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "dues", "matrix"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "type",
+                  "value": "MONTHLY"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "silva"
+                }
+              ]
+            },
+            "description": "Search members by name in dues matrix"
+          }
+        },
+        {
+          "name": "Create Payment (Monthly)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": \"MEMBER_UUID_HERE\",\n  \"type\": \"MONTHLY\",\n  \"year\": 2025,\n  \"month\": 1,\n  \"amount\": 150.00,\n  \"method\": \"PIX\",\n  \"paidAt\": \"2025-01-15T10:00:00.000Z\",\n  \"reference\": \"PIX-123456\",\n  \"notes\": \"Payment via mobile app\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments"]
+            },
+            "description": "Create a monthly payment and update charge. Replace MEMBER_UUID_HERE with actual member ID."
+          }
+        },
+        {
+          "name": "Create Payment (Annual)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": \"MEMBER_UUID_HERE\",\n  \"type\": \"ANNUAL\",\n  \"year\": 2025,\n  \"amount\": 500.00,\n  \"method\": \"TRANSFERENCIA\",\n  \"paidAt\": \"2025-01-15T10:00:00.000Z\",\n  \"reference\": \"TRANSFER-789\",\n  \"notes\": \"Annual fee payment\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments"]
+            },
+            "description": "Create an annual payment (no month field). Replace MEMBER_UUID_HERE with actual member ID."
+          }
+        },
+        {
+          "name": "Get Payment History (All)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments/history?page=1&limit=50",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments", "history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Get all payment history with pagination"
+          }
+        },
+        {
+          "name": "Get Payment History (Filtered by Year)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments/history?year=2025&page=1&limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments", "history"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get payment history filtered by year"
+          }
+        },
+        {
+          "name": "Get Payment History (Filtered by Member)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments/history?memberId=MEMBER_UUID_HERE&page=1&limit=10",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments", "history"],
+              "query": [
+                {
+                  "key": "memberId",
+                  "value": "MEMBER_UUID_HERE"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get payment history for a specific member. Replace MEMBER_UUID_HERE with actual member ID."
+          }
+        },
+        {
+          "name": "Export Payment History (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "auth-token={{TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/billing/payments/history?year=2025&format=csv",
+              "host": ["{{BASE_URL}}"],
+              "path": ["billing", "payments", "history"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2025"
+                },
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            },
+            "description": "Export payment history as CSV file"
+          }
+        }
+      ]
+    }
+  ]
+}

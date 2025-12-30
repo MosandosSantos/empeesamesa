@@ -1,0 +1,746 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================
+// Models
+// =============================
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users                User[]
+  members              Member[]
+  lojas                Loja[]
+  potencias            Potencia[]
+  ritos                Rito[]
+  memberInitiations    Member[] @relation("InitiationTenant")
+  memberPassages       Member[] @relation("PassageTenant")
+  memberElevations     Member[] @relation("ElevationTenant")
+  memberInstallations  Member[] @relation("InstallationTenant")
+  categorias           Categoria[]
+  lancamentos          Lancamento[]
+  inventoryItems       InventoryItem[]
+  inventoryMovements   InventoryMovement[]
+  meetings             Meeting[]
+  attendances          Attendance[]
+  memberPayments       MemberPayment[]
+  paymentPeriods       PaymentPeriod[]
+  paymentStatuses      PaymentStatus[]
+  paymentAuditLogs     PaymentAuditLog[]
+  payments             Payment[]
+  duesCharges          DuesCharge[]
+  kpiSnapshots         KpiSnapshot[]
+
+  @@map("tenant")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  lojaId       String?  // Nova coluna: usuário pertence a uma Loja
+  email        String
+  passwordHash String?  // Nullable até definir senha
+  role         String   @default("MEMBER") // SYS_ADMIN, LODGE_ADMIN, SECRETARY, FINANCE, MEMBER
+  status       String   @default("INVITED") // INVITED, ACTIVE, SUSPENDED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdByUserId String?
+  updatedByUserId String?
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja   Loja?  @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+  passwordInviteTokens PasswordInviteToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+  @@index([lojaId])
+  @@map("user")
+}
+
+model PasswordInviteToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_invite_token")
+}
+
+model Member {
+  id String @id @default(uuid())
+
+  // Multi-tenant
+  tenantId String
+
+  // Loja MX (obrigatório - todo membro pertence a uma Loja de Mesa)
+  lojaId String
+
+  // Campos legados (deprecated - usar lojaId)
+  lojaAtualNome        String?
+  lojaAtualNumero      String?
+  dataEntradaLojaAtual DateTime? // Data de entrada na loja atual
+  rito                 String? // RER, REAA, etc.
+
+  // Dados do cadastro na Potência
+  dataAdmissao  DateTime
+  tipoAdmissao  String // INIC, FILI, READ
+  numeroFiliado String?
+
+  // Dados pessoais
+  nomeCompleto   String
+  dataNascimento DateTime
+  pai            String
+  mae            String
+  naturalCidade  String
+  naturalUf      String // AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO
+  nacionalidade  String
+  estadoCivil    String // SOLTEIRO, CASADO, DIVORCIADO, VIUVO, UNIAO_ESTAVEL
+
+  // Documentos pessoais
+  identidadeNumero String
+  orgaoEmissor     String
+  dataEmissao      DateTime
+  cpf              String
+
+  // Contatos e endereço
+  email              String
+  celular            String
+  telefoneUrgencia   String
+  enderecoLogradouro String
+  enderecoCep        String
+  enderecoBairro     String
+  enderecoCidade     String
+  enderecoUf         String // AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO
+
+  // Escolaridade / idiomas
+  escolaridade String // OUTRO, PRIMEIRO_GRAU, SEGUNDO_GRAU, TERCEIRO_GRAU, POS_GRADUACAO, MESTRADO, DOUTORADO, ESPECIALIZACAO
+ // idiomas      String?
+
+  // Dados de saúde
+  //tipoSanguineo    String // A, B, AB, O
+  //fatorRh          String // POSITIVO, NEGATIVO
+  //tratamentoMedico String?
+  //planoSaude       String?
+
+  // Perfil militar (opcional)
+  //militar           Boolean @default(false)
+  //patente           String?
+  //ondeExerceMilitar String?
+
+  // Marcos rituais (opcionais) - sem FK para Loja
+  dataIniciacao       DateTime?
+  lojaIniciacaoNome   String?
+  lojaIniciacaoNumero String?
+  potenciaIniciacaoId String?
+
+  dataPassagem       DateTime?
+  lojaPassagemNome   String?
+  lojaPassagemNumero String?
+  potenciaPassagemId String?
+
+  dataElevacao       DateTime?
+  lojaElevacaoNome   String?
+  lojaElevacaoNumero String?
+  potenciaElevacaoId String?
+
+  dataInstalacao       DateTime?
+  lojaInstalacaoNome   String?
+  lojaInstalacaoNumero String?
+  potenciaInstalacaoId String?
+
+  // Estado
+  situacao String @default("ATIVO") // ATIVO, PROPOSTO, ADORMECIDO
+  class    String? // MESA, EN, CBCS
+
+  // Datas de progressão nas classes do RER
+  dataMESA DateTime? // Data em que se tornou Mestre de Santo André
+  dataEN   DateTime? // Data em que se tornou Escudeiro Noviço
+  dataCBCS DateTime? // Data em que se tornou Cavaleiro Benfeitor da Cidade Santa
+
+  // Mídia
+  fotoUrl String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant             Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja               Loja    @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+  potenciaIniciacao  Tenant? @relation("InitiationTenant", fields: [potenciaIniciacaoId], references: [id], onDelete: SetNull)
+  potenciaPassagem   Tenant? @relation("PassageTenant", fields: [potenciaPassagemId], references: [id], onDelete: SetNull)
+  potenciaElevacao   Tenant? @relation("ElevationTenant", fields: [potenciaElevacaoId], references: [id], onDelete: SetNull)
+  potenciaInstalacao Tenant? @relation("InstallationTenant", fields: [potenciaInstalacaoId], references: [id], onDelete: SetNull)
+  assignedInventoryItems InventoryItem[] @relation("InventoryItemAssignedToMember")
+  attendances        Attendance[]
+  payments           MemberPayment[]
+  paymentStatuses    PaymentStatus[]
+  billingPayments    Payment[] @relation("PaymentMember")
+  billingCharges     DuesCharge[] @relation("ChargeMember")
+
+  @@unique([tenantId, cpf])
+  @@unique([tenantId, numeroFiliado])
+  @@index([tenantId, nomeCompleto])
+  @@index([situacao])
+  @@index([cpf])
+  @@index([lojaId])
+  @@map("member")
+}
+
+model Potencia {
+  id        String   @id @default(uuid())
+  tenantId  String
+
+  // Dados básicos
+  nome      String
+  sigla     String?
+
+  // Contato
+  email     String?
+  telefone  String?
+  website   String?
+
+  // Endereço
+  enderecoLogradouro String?
+  enderecoNumero     String?
+  enderecoComplemento String?
+  enderecoBairro     String?
+  enderecoCidade     String?
+  enderecoUf         String? // 2 letras: RJ, SP, etc.
+  enderecoCep        String?
+
+  // Metadados
+  observacoes String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lojas  Loja[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
+  @@map("potencia")
+}
+
+model Rito {
+  id        String   @id @default(uuid())
+  tenantId  String
+
+  // Dados básicos
+  nome      String   // Ex: "Rito Escocês Retificado", "Rito Escocês Antigo e Aceito"
+  sigla     String?  // Ex: "RER", "REAA"
+  descricao String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lojas  Loja[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
+  @@map("rito")
+}
+
+model Loja {
+  id        String   @id @default(uuid())
+  tenantId  String
+
+  // Relação com Potência (obrigatória)
+  potenciaId String
+
+  // Dados básicos
+  lojaMX           String   // Nome da Loja de Mesa (Loja de Santo André - Grau 4 RER)
+  numero           Int?     // Número ritualístico da Loja
+  contatoNome      String?
+
+  // Contrato / SaaS
+  contractNumber      String   @default("PENDENTE")
+  mensalidadeAtiva    Boolean  @default(true)
+  mensalidadeValidaAte DateTime?
+
+  // Documentos (BR)
+  cnpj String?
+
+  // Contato
+  email    String?
+  telefone String?
+  website  String?
+
+  // Endereço
+  enderecoLogradouro  String?
+  enderecoNumero      String?
+  enderecoComplemento String?
+  enderecoBairro      String?
+  enderecoCidade      String?
+  enderecoUf          String? // 2 letras: RJ, SP, etc.
+  enderecoCep         String?
+
+  // Metadados
+  dataFundacao DateTime?
+  situacao     String       @default("ATIVA") // ATIVA, ADORMECIDA, SUSPENSA, EXTINGUIDA
+  observacoes  String?
+
+  // Relação com Rito (opcional)
+  ritoId String?
+
+  // Valores de mensalidade e anuidade (Sprint Pagamentos)
+  valorMensalidade Decimal @default(150.00) @db.Decimal(10, 2)
+  valorAnuidade    Decimal @default(500.00) @db.Decimal(10, 2)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  potencia  Potencia  @relation(fields: [potenciaId], references: [id], onDelete: Restrict)
+  rito      Rito?     @relation(fields: [ritoId], references: [id], onDelete: SetNull)
+  members   Member[]
+  meetings  Meeting[]
+  payments  Payment[]
+  duesCharges DuesCharge[]
+  kpiSnapshots KpiSnapshot[]
+  users     User[]
+
+  @@unique([potenciaId, numero])
+  @@index([tenantId])
+  @@index([potenciaId])
+  @@index([situacao])
+  @@index([mensalidadeAtiva, mensalidadeValidaAte])
+  @@map("loja")
+}
+
+// =============================
+// Categoria (Sprint 6)
+// =============================
+
+model Categoria {
+  id        String   @id @default(uuid())
+  tenantId  String
+  nome      String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lancamentos Lancamento[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
+  @@map("categoria")
+}
+
+// =============================
+// Lancamento (Sprint 6)
+// =============================
+// Note: SQLite doesn't support enums, so we use String with validation at app level
+// Valid values:
+// - tipo: "RECEITA" | "DESPESA"
+// - status: "ABERTO" | "PAGO" | "PARCIAL" | "ATRASADO" | "PREVISTO"
+// - formaPagamento: "PIX" | "TRANSFERENCIA" | "DINHEIRO" | "BOLETO"
+
+model Lancamento {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tipo           String   // RECEITA, DESPESA
+  categoriaId    String
+  descricao      String
+  valorPrevisto  Float
+  valorPago      Float    @default(0)
+  dataVencimento DateTime
+  dataPagamento  DateTime?
+  status         String   // ABERTO, PAGO, PARCIAL, ATRASADO, PREVISTO
+  formaPagamento String?  // PIX, TRANSFERENCIA, DINHEIRO, BOLETO
+  anexo          String?  // URL do arquivo
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoria     Categoria      @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  memberPayment MemberPayment?
+
+  @@index([tenantId])
+  @@index([categoriaId])
+  @@index([tipo])
+  @@index([status])
+  @@index([dataVencimento])
+  @@map("lancamento")
+}
+
+// =============================
+// Pagamentos de Membros (Sprint 6+)
+// =============================
+
+model MemberPayment {
+  id             String   @id @default(uuid())
+  tenantId       String
+  memberId       String
+  lancamentoId   String   @unique
+
+  // Payment details
+  paymentType    String   // MENSALIDADE_LOJA, ANUIDADE_PRIORADO, EVENTO
+  referenceMonth Int?     // 1-12 (for mensalidade)
+  referenceYear  Int?     // YYYY (for mensalidade/anuidade)
+  description    String
+
+  // Financial info (denormalized for quick queries)
+  amount         Float
+  paymentMethod  String   // PIX, TRANSFERENCIA, DINHEIRO, BOLETO
+  paymentDate    DateTime
+
+  // Audit trail
+  createdById    String?
+  createdByName  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  member     Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  lancamento Lancamento @relation(fields: [lancamentoId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, memberId, referenceYear, referenceMonth])
+  @@index([paymentType])
+  @@index([paymentDate])
+  @@map("member_payment")
+}
+
+// =============================
+// Sistema de Pagamentos (Sprint Pagamentos)
+// =============================
+// Note: SQLite doesn't support enums, so we use String with validation at app level
+// Valid values:
+// - PeriodType: "MONTHLY" | "ANNUAL" | "EVENT"
+// - PayStatus: "PENDING" | "PAID" | "CANCELED"
+
+model PaymentPeriod {
+  id        String   @id @default(uuid())
+  tenantId  String
+  type      String   // MONTHLY, ANNUAL, EVENT
+  year      Int
+  month     Int?     // 1..12 somente se MONTHLY
+  eventId   String?  // futuro (EVENT)
+  label     String?  // ex: "Mensalidade Jan/2025" ou "Anuidade 2027"
+  createdAt DateTime @default(now())
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  statuses PaymentStatus[]
+
+  @@unique([tenantId, type, year, month, eventId])
+  @@index([tenantId, type, year])
+  @@map("payment_period")
+}
+
+model PaymentStatus {
+  id        String   @id @default(uuid())
+  tenantId  String
+  memberId  String
+  periodId  String
+  status    String   @default("PENDING") // PENDING, PAID, CANCELED
+
+  amount    Float?   // opcional (caso queira registrar)
+  method    String?  // PIX, Dinheiro, Cartão, Convênio etc
+  paidAt    DateTime?
+  notes     String?
+
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  member Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  period PaymentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, memberId, periodId])
+  @@index([tenantId, memberId])
+  @@index([tenantId, periodId])
+  @@index([status, paidAt])
+  @@map("payment_status")
+}
+
+model PaymentAuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  memberId    String
+  periodId    String
+
+  action      String   // MARK_PAID | MARK_PENDING | EDIT_META | CANCEL
+  before      String?  // JSON string (SQLite doesn't support Json type well)
+  after       String?  // JSON string
+  actorUserId String?
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, memberId])
+  @@index([tenantId, periodId])
+  @@map("payment_audit_log")
+}
+
+// =============================
+// Presença / Agenda (Sprint 4)
+// =============================
+
+model Meeting {
+  id          String   @id @default(uuid())
+  tenantId    String
+  lojaId      String?
+  dataSessao  DateTime
+  tipo        String   // ORDINARIA, EXTRAORDINARIA, INICIACAO, INSTALACAO, MAGNA, LUTO
+  titulo      String?
+  descricao   String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja        Loja?        @relation(fields: [lojaId], references: [id], onDelete: SetNull)
+  attendances Attendance[]
+
+  @@index([tenantId])
+  @@index([lojaId])
+  @@index([dataSessao])
+  @@map("meeting")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  tenantId  String
+  meetingId String
+  memberId  String
+  status    String   // PRESENTE, FALTA, JUSTIFICADA
+  observacoes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, memberId])
+  @@index([tenantId])
+  @@index([meetingId])
+  @@index([memberId])
+  @@map("attendance")
+}
+
+// =============================
+// Inventario (Sprint 9 v2)
+// =============================
+
+model InventoryItem {
+  id                 String   @id @default(uuid())
+  tenantId           String
+
+  sku                String?
+  name               String
+  unit               String?
+  category           String?
+  location           String?
+  minQty             Int      @default(0)
+  reorderPoint       Int      @default(0)
+
+  qtyOnHand          Int      @default(0)
+  avgCost            Decimal  @default(0.0)
+  lastPurchaseCost   Decimal?
+
+  assignedToMemberId String?
+  notes              String?
+
+  createdById        String?
+  createdByName      String?
+  updatedById        String?
+  updatedByName      String?
+
+  archivedAt         DateTime?
+  archivedById       String?
+  archivedByName     String?
+  archiveReason      String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedToMember  Member?  @relation("InventoryItemAssignedToMember", fields: [assignedToMemberId], references: [id], onDelete: SetNull)
+  movements         InventoryMovement[]
+
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@index([tenantId, assignedToMemberId])
+  @@map("inventory_item")
+}
+
+model InventoryMovement {
+  id              String   @id @default(uuid())
+  tenantId         String
+
+  itemId           String
+  item             InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  type             String   // IN, OUT, ADJUST, ARCHIVE
+  qty              Int
+
+  unitCost         Decimal?
+  movementValue    Decimal?
+
+  qtyBefore        Int
+  qtyAfter         Int
+  avgCostBefore    Decimal
+  avgCostAfter     Decimal
+
+  reason           String?
+  createdById      String?
+  createdByName    String?
+
+  ip               String?
+  userAgent        String?
+
+  createdAt        DateTime @default(now())
+
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, itemId])
+  @@index([tenantId, createdAt])
+  @@map("inventory_movement")
+}
+
+
+// =============================
+// Billing System (Mensalidades & Anuidades)
+// =============================
+
+model Payment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  lojaId      String
+  memberId    String
+
+  type        String   // MONTHLY, ANNUAL (enum in validation)
+  year        Int
+  month       Int?     // 1-12 (required for MONTHLY, null for ANNUAL)
+
+  amount      Decimal
+  method      String   // PIX, TRANSFERENCIA, DINHEIRO, BOLETO
+  status      String   // CONFIRMED, PENDING
+  paidAt      DateTime
+
+  createdByUserId String?
+  reference       String?
+  notes           String?
+  beneficiary     String   // LODGE, POTENCY (auto-set based on type)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja        Loja             @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+  member      Member           @relation("PaymentMember", fields: [memberId], references: [id], onDelete: Restrict)
+  duesCharge  DuesCharge?      @relation("PaymentCharge")
+
+  @@index([tenantId])
+  @@index([lojaId])
+  @@index([lojaId, memberId, paidAt])
+  @@index([lojaId, type, year, month])
+  @@map("payment")
+}
+
+model DuesCharge {
+  id             String   @id @default(uuid())
+  tenantId       String
+  lojaId         String
+  memberId       String
+
+  type           String   // MONTHLY, ANNUAL
+  year           Int
+  month          Int?     // 1-12 (required for MONTHLY, null for ANNUAL)
+
+  expectedAmount Decimal
+  status         String   @default("OPEN") // OPEN, PAID
+  paidPaymentId  String?  @unique
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja           Loja     @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+  member         Member   @relation("ChargeMember", fields: [memberId], references: [id], onDelete: Restrict)
+  paidPayment    Payment? @relation("PaymentCharge", fields: [paidPaymentId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, lojaId, type, year, month, memberId])
+  @@index([tenantId])
+  @@index([lojaId])
+  @@index([lojaId, type, year, month, status])
+  @@index([memberId])
+  @@map("dues_charge")
+}
+
+model KpiSnapshot {
+  id                String   @id @default(uuid())
+  tenantId          String
+  lojaId            String
+
+  type              String   // MONTHLY, ANNUAL
+  year              Int
+  month             Int?     // 1-12 (required for MONTHLY, null for ANNUAL)
+
+  expectedAmount    Decimal  @default(0)
+  paidAmount        Decimal  @default(0)
+  openAmount        Decimal  @default(0)
+
+  membersActive     Int      @default(0)
+  paidMembers       Int      @default(0)
+  delinquentMembers Int      @default(0)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  loja              Loja     @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, lojaId, type, year, month])
+  @@index([tenantId])
+  @@index([lojaId])
+  @@index([lojaId, type, year, month])
+  @@map("kpi_snapshot")
+}

@@ -1,0 +1,97 @@
+# Sprint 9 - Inventario (2 semanas) - Revisao v2 (Next.js + Prisma)
+
+**Objetivo:** controle de estoque funcional, moderno e auditavel, multi-tenant (SaaS), com custo medio ponderado, log imutavel e testes automaticos.
+
+---
+
+## 0) Contexto e premissas
+- Multi-tenant obrigatorio: uma loja nao ve itens/movimentacoes de outra.
+- Somente ADMIN pode arquivar itens (soft delete) com reauth por senha.
+- Usuarios nao-admin fazem somente saida (OUT).
+- Toda operacao registra autor (userId + nome/email) e metadados (data/hora, antes/depois, IP e user-agent).
+- Movimentacoes nao podem ser apagadas.
+
+---
+
+## 1) Regras de negocio
+### 1.1 Quantidade
+- qtyOnHand nunca negativa.
+- OUT exige qtyOnHand >= qty.
+- IN soma ao estoque.
+
+### 1.2 Custo medio ponderado
+Ao registrar IN com qty e unitCost:
+- currentValue = currentQty * currentAvg
+- purchaseValue = purchaseQty * purchaseUnitCost
+- newAvg = (currentValue + purchaseValue) / (currentQty + purchaseQty)
+
+OUT nao altera avgCost.
+
+### 1.3 Valor total
+- Por item: totalValue = qtyOnHand * avgCost
+- Por tenant: soma de totalValue dos itens ativos.
+
+### 1.4 Arquivamento
+- Soft delete; recomendado so arquivar se qtyOnHand == 0.
+- Reauth de senha + motivo obrigatorio.
+- Gera movement ARCHIVE.
+
+---
+
+## 2) Modelagem (Prisma)
+- InventoryItem com sku, minQty, qtyOnHand, avgCost, lastPurchaseCost, created/updated by, archivedAt/by/reason.
+- InventoryMovement com type (IN/OUT/ADJUST/ARCHIVE), qty, unitCost, movementValue, before/after, avg before/after.
+- Indices por tenantId, itemId e createdAt.
+
+---
+
+## 3) API (Next.js App Router)
+- Itens:
+  - GET /api/inventory/items
+  - POST /api/inventory/items
+  - GET /api/inventory/items/:id
+  - PUT /api/inventory/items/:id
+  - PATCH /api/inventory/items/:id/archive (admin + senha + motivo)
+- Movimentos:
+  - GET /api/inventory/movements?itemId=&from=&to=&type=
+  - POST /api/inventory/movements/in (admin)
+  - POST /api/inventory/movements/out (qualquer usuario logado)
+- Admin reauth:
+  - POST /api/admin/verify-password
+
+---
+
+## 4) UI/UX
+- Inventario (lista): titulo + KPIs compactos + filtros e acoes em card + tabela listrada.
+- Detalhe do item: resumo (qtd, reposicao, custo medio, valor total) + historico de movimentos.
+- Log global: filtros por periodo, tipo e item.
+- Modais: entrada, saida, arquivar (senha + motivo).
+
+---
+
+## 5) Log imutavel
+- Nao criar endpoints DELETE para movimentos.
+- Correcoes via ADJUST (com motivo formal).
+
+---
+
+## 6) Testes obrigatorios
+Casos minimos:
+A) criar item (qty=0, avg=0, createdByName)
+B) entrada 10 a 5 => avg=5, qty=10, total=50
+C) entrada 10 a 7 => avg=6, qty=20, total=120
+D) saida 5 => qty=15, avg=6, total=90 + autor
+E) saida > estoque => erro
+F) nao existe delete de movements (404) / bloqueio no service
+G) archive so admin+senha; com qty>0 falha; qty==0 ok + movement ARCHIVE
+H) multi-tenant (A nao acessa B)
+
+---
+
+## 7) Backlog
+- S9.1 Models + Migrations + Seeds
+- S9.2 CRUD Itens + UI Lista/Detalhe
+- S9.3 Entrada/Saida (transaction) + media ponderada + autor
+- S9.4 Log UI + Filtros (botao "Log Global" na lista do inventario)
+- S9.5 Arquivar item (admin + senha + motivo)
+- S9.6 Testes automatizados (A-H)

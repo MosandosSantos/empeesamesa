@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run db:seed:*)",
+      "Bash(node -e:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}
