@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         createBillingError(
           "VALIDATION_ERROR",
           "Dados de pagamento inválidos",
-          validation.error.errors
+          validation.error.issues
         ),
         { status: 400 }
       );
