@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Atualizar usuário: definir senha e status ACTIVE
     await prisma.user.update({
-      where: { id: tokenData.userId },
+      where: { id: tokenData },
       data: {
         passwordHash,
         status: "ACTIVE",

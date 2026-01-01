@@ -57,6 +57,9 @@ npm run db:reset
 
 # Backfill potencias data (custom script)
 npm run db:backfill-potencias
+
+# Create admin user for Impessa lodge
+npm run db:create-impessa-admin
 ```
 
 **Important Database Notes:**
@@ -70,12 +73,14 @@ npm run db:backfill-potencias
 ### Package Management
 
 ```bash
-# Install dependencies
+# Install dependencies (also runs prisma generate via postinstall)
 npm install
 
 # Add new package
 npm install <package-name>
 ```
+
+**Note**: The `postinstall` script automatically runs `prisma generate` after dependencies are installed.
 
 ## Architecture
 
@@ -282,7 +287,8 @@ When implementing features, follow this pattern (based on PRD requirements):
 
 **Other:**
 - `pdf-lib@1.17.1` - PDF generation
-- `xlsx@0.18.5` - Excel file handling
+- `exceljs@4.4.0` - Excel file generation and manipulation
+- `nodemailer@7.0.12` - Email sending (SMTP)
 
 ### Sprint Planning
 
@@ -518,12 +524,22 @@ The **slider_1/** directory contains a legacy prototype and is separate from the
 
 ## Environment Variables
 
-Required environment variables in `.env`:
+Required environment variables in `.env` (see `.env.example` for complete template):
 
 ```bash
 # PostgreSQL database connection (Neon serverless)
-DATABASE_URL="postgresql://..."
+DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
 
 # JWT secret for authentication (change in production!)
-JWT_SECRET="your-secret-key-change-in-production"
+JWT_SECRET="your-secure-jwt-secret-change-in-production"
+
+# Email Configuration (SMTP) - Optional, for communication features
+EMAIL_HOST="smtp.example.com"
+EMAIL_PORT="587"
+EMAIL_USER="your-email@example.com"
+EMAIL_PASSWORD="your-app-password"
+EMAIL_FROM="Your App Name <your-email@example.com>"
+
+# Base URL for invite links
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 ```

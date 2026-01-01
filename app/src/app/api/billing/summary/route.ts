@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         createBillingError(
           "VALIDATION_ERROR",
           "Parâmetros inválidos",
-          validation.error.errors
+          validation.error.issues
         ),
         { status: 400 }
       );

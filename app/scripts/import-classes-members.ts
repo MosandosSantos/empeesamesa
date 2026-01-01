@@ -133,7 +133,7 @@ async function main() {
       return {
         tenantId: tenant.id,
         lojaId: loja.id,
-        lojaAtualNome: loja.nomeSimboli ?? "Loja Padrao",
+        lojaAtualNome: loja.lojaMX ?? "Loja Padrao",
         lojaAtualNumero: loja.numero?.toString() ?? "1",
         dataEntradaLojaAtual: dataAdmissao,
         rito: "RER",
@@ -169,7 +169,7 @@ async function main() {
         escolaridade: randomFrom(ESCOLARIDADES),
 
         dataIniciacao: dataAdmissao,
-        lojaIniciacaoNome: loja.nomeSimboli ?? "Loja Padrao",
+        lojaIniciacaoNome: loja.lojaMX ?? "Loja Padrao",
         lojaIniciacaoNumero: loja.numero?.toString() ?? "1",
 
         situacao: "ATIVO",
@@ -179,7 +179,7 @@ async function main() {
         dataCBCS,
       };
     })
-    .filter(Boolean);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   if (dataToInsert.length === 0) {
     console.log("Nenhum registro valido encontrado no arquivo.");

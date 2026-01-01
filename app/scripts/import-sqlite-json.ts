@@ -290,7 +290,7 @@ const main = async () => {
   const existingTenants = await prisma.tenant.count();
   if (existingTenants > 0) {
     for (const table of [...tableOrder].reverse()) {
-      const model = modelMap[table as keyof typeof modelMap];
+      const model = modelMap[table as keyof typeof modelMap] as any;
       await model.deleteMany();
     }
   }
@@ -300,7 +300,7 @@ const main = async () => {
     if (rows.length === 0) continue;
 
     const records = rows.map((row) => normalizeRow(table, row));
-    const model = modelMap[table as keyof typeof modelMap];
+    const model = modelMap[table as keyof typeof modelMap] as any;
     await model.createMany({ data: records });
     console.log(`Imported ${records.length} records into ${table}.`);
   }
