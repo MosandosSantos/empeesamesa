@@ -10,7 +10,7 @@ import {
   checkDuplicatePayment,
   updateKpiSnapshot,
 } from "@/lib/billing-helpers";
-import { Decimal } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 /**
  * POST /api/billing/payments
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           type: data.type,
           year: data.year,
           month: data.month ?? null,
-          amount: new Decimal(data.amount),
+          amount: new Prisma.Decimal(data.amount),
           method: data.method,
           status: "CONFIRMED",
           paidAt,
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
             type: data.type,
             year: data.year,
             month: data.month ?? null,
-            expectedAmount: new Decimal(data.amount),
+            expectedAmount: new Prisma.Decimal(data.amount),
             status: "PAID",
             paidPaymentId: payment.id,
           },

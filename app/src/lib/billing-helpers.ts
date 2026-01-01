@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma, Decimal } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { PaymentType, ChargeStatus } from "@/lib/validations/billing";
 
 /**
@@ -66,17 +66,17 @@ export async function updateKpiSnapshot(
       type,
       year,
       month: month ?? null,
-      expectedAmount: new Decimal(expectedAmount),
-      paidAmount: new Decimal(paidAmount),
-      openAmount: new Decimal(openAmount),
+      expectedAmount: new Prisma.Decimal(expectedAmount),
+      paidAmount: new Prisma.Decimal(paidAmount),
+      openAmount: new Prisma.Decimal(openAmount),
       membersActive,
       paidMembers,
       delinquentMembers,
     },
     update: {
-      expectedAmount: new Decimal(expectedAmount),
-      paidAmount: new Decimal(paidAmount),
-      openAmount: new Decimal(openAmount),
+      expectedAmount: new Prisma.Decimal(expectedAmount),
+      paidAmount: new Prisma.Decimal(paidAmount),
+      openAmount: new Prisma.Decimal(openAmount),
       membersActive,
       paidMembers,
       delinquentMembers,
@@ -264,7 +264,7 @@ export async function generateChargesForPeriod(
     type,
     year,
     month: month ?? null,
-    expectedAmount: new Decimal(expectedAmount),
+    expectedAmount: new Prisma.Decimal(expectedAmount),
     status: "OPEN" as ChargeStatus,
   }));
 
