@@ -57,7 +57,7 @@ export function AppShell({ children }: AppShellProps) {
           <SheetHeader className="sr-only">
             <SheetTitle>Menu de Navegação</SheetTitle>
             <SheetDescription>
-              Navegue pelas diferentes seções do sistema EsferaORDO
+              Navegue pelas diferentes seções do sistema SAL GOISC
             </SheetDescription>
           </SheetHeader>
           <Sidebar isOpen={true} onClose={closeMobileMenu} />
@@ -81,17 +81,10 @@ export function AppShell({ children }: AppShellProps) {
         <footer className="border-t border-border bg-secondary/30 py-6">
           <div className="mx-auto max-w-7xl px-4 lg:px-6">
             <div className="rounded-2xl border border-border/70 bg-card/80 px-4 py-5 shadow-sm backdrop-blur">
-              <div className="flex items-center justify-center">
-                <img
-                  src="/img/logo.svg"
-                  alt="EsferaOrdo"
-                  className="h-8 w-auto"
-                />
-              </div>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rer-green">
-                    EsferaOrdo
+                    SAL GOISC
                   </p>
                   <p className="text-base font-semibold text-foreground">
                     {"Sistema de gest\u00e3o de lojas de mesa"}

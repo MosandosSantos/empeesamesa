@@ -27,7 +27,7 @@ export default async function ExcluirLojaPage({
       telefone: true,
       enderecoCidade: true,
       enderecoUf: true,
-      mensalidadeValidaAte: true,
+      mensalidadeVencimentoDia: true,
     },
   });
 
@@ -52,7 +52,7 @@ export default async function ExcluirLojaPage({
         contatoNome: loja.contatoNome ?? "-",
         telefone: loja.telefone ?? "-",
         cidadeUf,
-        validade: loja.mensalidadeValidaAte ? loja.mensalidadeValidaAte.toISOString() : null,
+        validade: loja.mensalidadeVencimentoDia ? `Dia ${loja.mensalidadeVencimentoDia}` : null,
       }}
     />
   );

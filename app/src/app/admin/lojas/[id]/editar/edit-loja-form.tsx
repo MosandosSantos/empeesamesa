@@ -55,6 +55,8 @@ export default function EditLojaForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [cnpjError, setCnpjError] = useState("");
+  const [cepError, setCepError] = useState("");
 
   const [form, setForm] = useState({
     lojaMX: loja.lojaMX,
@@ -65,10 +67,12 @@ export default function EditLojaForm({
     dataFundacao: formatDateForInput(loja.dataFundacao),
     contractNumber: loja.contractNumber,
     mensalidadeAtiva: loja.mensalidadeAtiva,
-    mensalidadeValidaAte: formatDateForInput(loja.mensalidadeValidaAte),
+    mensalidadeVencimentoDia: loja.mensalidadeVencimentoDia?.toString() || "",
     valorMensalidade: loja.valorMensalidade?.toString() || "150.00",
-    valorAnuidade: loja.valorAnuidade?.toString() || "500.00",
     cnpj: loja.cnpj || "",
+    razaoSocial: loja.razaoSocial || "",
+    nomeFantasia: loja.nomeFantasia || "",
+    dataAbertura: formatDateForInput(loja.dataAbertura),
     contatoNome: loja.contatoNome || "",
     email: loja.email || "",
     telefone: loja.telefone || "",
@@ -80,11 +84,107 @@ export default function EditLojaForm({
     enderecoCidade: loja.enderecoCidade || "",
     enderecoUf: loja.enderecoUf || "",
     enderecoCep: loja.enderecoCep || "",
+    // Dados bancários
+    bancoCodigo: loja.bancoCodigo || "",
+    bancoNome: loja.bancoNome || "",
+    bancoAgencia: loja.bancoAgencia || "",
+    bancoAgenciaDigito: loja.bancoAgenciaDigito || "",
+    bancoConta: loja.bancoConta || "",
+    bancoContaDigito: loja.bancoContaDigito || "",
+    bancoTipoConta: loja.bancoTipoConta || "",
+    bancoPix: loja.bancoPix || "",
     observacoes: loja.observacoes || "",
   });
 
   const update = (key: string) => (value: string | boolean) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const formatCnpj = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+    const parts = [
+      digits.slice(0, 2),
+      digits.slice(2, 5),
+      digits.slice(5, 8),
+      digits.slice(8, 12),
+      digits.slice(12, 14),
+    ];
+
+    if (digits.length <= 2) return parts[0];
+    if (digits.length <= 5) return `${parts[0]}.${parts[1]}`;
+    if (digits.length <= 8) return `${parts[0]}.${parts[1]}.${parts[2]}`;
+    if (digits.length <= 12) return `${parts[0]}.${parts[1]}.${parts[2]}/${parts[3]}`;
+    return `${parts[0]}.${parts[1]}.${parts[2]}/${parts[3]}-${parts[4]}`;
+  };
+
+  const handleCnpjChange = (value: string) => {
+    setCnpjError("");
+    update("cnpj")(formatCnpj(value));
+  };
+
+  const handleCnpjBlur = async () => {
+    const digits = String(form.cnpj || "").replace(/\D/g, "");
+    if (digits.length !== 14) return;
+
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      const data = await response.json().catch(() => null);
+      if (!response.ok || data?.message || data?.error) {
+        setCnpjError(data?.message || "CNPJ nao encontrado na base publica.");
+        return;
+      }
+      setCnpjError("");
+      if (data?.razao_social && !String(form.razaoSocial || "").trim()) {
+        update("razaoSocial")(data.razao_social);
+      }
+      if (data?.nome_fantasia && !String(form.nomeFantasia || "").trim()) {
+        update("nomeFantasia")(data.nome_fantasia);
+      }
+      if (data?.data_inicio_atividade && !form.dataAbertura) {
+        update("dataAbertura")(String(data.data_inicio_atividade).slice(0, 10));
+      }
+    } catch (_error) {
+      setCnpjError("Nao foi possivel validar o CNPJ agora.");
+    }
+  };
+
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
+
+  const handleCepChange = (value: string) => {
+    setCepError("");
+    update("enderecoCep")(formatCep(value));
+  };
+
+  const handleCepBlur = async () => {
+    const digits = String(form.enderecoCep || "").replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      if (!response.ok) {
+        setCepError("CEP não encontrado.");
+        return;
+      }
+      const data = await response.json();
+      if (data?.erro) {
+        setCepError("CEP não encontrado.");
+        return;
+      }
+
+      update("enderecoLogradouro")(data.logradouro || "");
+      update("enderecoBairro")(data.bairro || "");
+      update("enderecoCidade")(data.localidade || "");
+      update("enderecoUf")(data.uf || "");
+      if (data.complemento && !String(form.enderecoComplemento || "").trim()) {
+        update("enderecoComplemento")(data.complemento);
+      }
+    } catch (_error) {
+      setCepError("Não foi possível validar o CEP agora.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,10 +205,10 @@ export default function EditLojaForm({
           ...form,
           numero: form.numero ? parseInt(form.numero) : null,
           dataFundacao: form.dataFundacao || null,
-          mensalidadeValidaAte: form.mensalidadeValidaAte || null,
+          dataAbertura: form.dataAbertura || null,
+          mensalidadeVencimentoDia: form.mensalidadeVencimentoDia ? parseInt(form.mensalidadeVencimentoDia) : null,
           ritoId: form.ritoId || null,
           valorMensalidade: parseFloat(form.valorMensalidade),
-          valorAnuidade: parseFloat(form.valorAnuidade),
         }),
       });
 
@@ -168,7 +268,7 @@ export default function EditLojaForm({
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 form-br-forest">
         {/* Dados Gerais */}
         <Section title="Dados Gerais" icon={<Store size={18} />}>
           <div className="grid gap-4 md:grid-cols-2">
@@ -215,7 +315,6 @@ export default function EditLojaForm({
                 <option value="">Nenhum</option>
                 {ritos.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.sigla ? `${r.sigla} - ` : ""}
                     {r.nome}
                   </option>
                 ))}
@@ -247,7 +346,38 @@ export default function EditLojaForm({
               <input
                 type="text"
                 value={form.cnpj}
-                onChange={(e) => update("cnpj")(e.target.value)}
+                onChange={(e) => handleCnpjChange(e.target.value)}
+                onBlur={handleCnpjBlur}
+                className="input-field"
+                placeholder="00.000.000/0000-00"
+              />
+              {cnpjError && (
+                <span className="text-xs text-red-600">{cnpjError}</span>
+              )}
+            </Field>
+            <Field label="Razão social">
+              <input
+                type="text"
+                value={form.razaoSocial}
+                onChange={(e) => update("razaoSocial")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: Associação Maçônica XYZ"
+              />
+            </Field>
+            <Field label="Nome fantasia">
+              <input
+                type="text"
+                value={form.nomeFantasia}
+                onChange={(e) => update("nomeFantasia")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: ARLSFBU4"
+              />
+            </Field>
+            <Field label="Data de abertura">
+              <input
+                type="date"
+                value={form.dataAbertura}
+                onChange={(e) => update("dataAbertura")(e.target.value)}
                 className="input-field"
               />
             </Field>
@@ -266,11 +396,25 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="Mensalidade Válida Até">
+            <Field label="Dia de vencimento da mensalidade">
               <input
-                type="date"
-                value={form.mensalidadeValidaAte}
-                onChange={(e) => update("mensalidadeValidaAte")(e.target.value)}
+                type="number"
+                min="1"
+                max="31"
+                value={form.mensalidadeVencimentoDia}
+                onChange={(e) => update("mensalidadeVencimentoDia")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: 10 (todo dia 10 do mês)"
+              />
+            </Field>
+            <Field label="Valor da Mensalidade (R$)" required>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.valorMensalidade}
+                onChange={(e) => update("valorMensalidade")(e.target.value)}
+                required
                 className="input-field"
               />
             </Field>
@@ -289,29 +433,82 @@ export default function EditLojaForm({
           </div>
         </Section>
 
-        {/* Valores de Pagamento */}
-        <Section title="Valores de Pagamento" icon={<FileText size={18} />}>
+        {/* Dados Bancários */}
+        <Section title="Dados Bancários" icon={<FileText size={18} />}>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Valor da Mensalidade (R$)" required>
+            <Field label="Banco">
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.valorMensalidade}
-                onChange={(e) => update("valorMensalidade")(e.target.value)}
-                required
+                type="text"
+                value={form.bancoNome}
+                onChange={(e) => update("bancoNome")(e.target.value)}
                 className="input-field"
+                placeholder="Ex: Banco do Brasil"
               />
             </Field>
-            <Field label="Valor da Anuidade (R$)" required>
+            <Field label="Código do banco">
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.valorAnuidade}
-                onChange={(e) => update("valorAnuidade")(e.target.value)}
-                required
+                type="text"
+                value={form.bancoCodigo}
+                onChange={(e) => update("bancoCodigo")(e.target.value)}
                 className="input-field"
+                placeholder="Ex: 001, 237, 341"
+              />
+            </Field>
+            <Field label="Agência">
+              <input
+                type="text"
+                value={form.bancoAgencia}
+                onChange={(e) => update("bancoAgencia")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: 1234"
+              />
+            </Field>
+            <Field label="Dígito da agência">
+              <input
+                type="text"
+                value={form.bancoAgenciaDigito}
+                onChange={(e) => update("bancoAgenciaDigito")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: 5"
+                maxLength={1}
+              />
+            </Field>
+            <Field label="Conta">
+              <input
+                type="text"
+                value={form.bancoConta}
+                onChange={(e) => update("bancoConta")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: 12345678"
+              />
+            </Field>
+            <Field label="Dígito da conta">
+              <input
+                type="text"
+                value={form.bancoContaDigito}
+                onChange={(e) => update("bancoContaDigito")(e.target.value)}
+                className="input-field"
+                placeholder="Ex: 9"
+              />
+            </Field>
+            <Field label="Tipo de conta">
+              <select
+                value={form.bancoTipoConta}
+                onChange={(e) => update("bancoTipoConta")(e.target.value)}
+                className="input-field"
+              >
+                <option value="">Selecione</option>
+                <option value="CORRENTE">Corrente</option>
+                <option value="POUPANCA">Poupança</option>
+              </select>
+            </Field>
+            <Field label="Chave PIX">
+              <input
+                type="text"
+                value={form.bancoPix}
+                onChange={(e) => update("bancoPix")(e.target.value)}
+                className="input-field"
+                placeholder="CNPJ, e-mail, telefone ou chave aleatória"
               />
             </Field>
           </div>
@@ -357,8 +554,21 @@ export default function EditLojaForm({
         </Section>
 
         {/* Endereço */}
-        <Section title="Endereço" icon={<MapPin size={18} />}>
+        
+        <Section title="Endere?o" icon={<MapPin size={18} />}>
           <div className="grid gap-4 md:grid-cols-2">
+            <Field label="CEP">
+              <input
+                type="text"
+                value={form.enderecoCep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                onBlur={handleCepBlur}
+                className="input-field"
+              />
+              {cepError && (
+                <span className="text-xs text-red-600">{cepError}</span>
+              )}
+            </Field>
             <Field label="Logradouro">
               <input
                 type="text"
@@ -367,7 +577,7 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="Número">
+            <Field label="N?mero">
               <input
                 type="text"
                 value={form.enderecoNumero}
@@ -413,16 +623,9 @@ export default function EditLojaForm({
                 ))}
               </select>
             </Field>
-            <Field label="CEP">
-              <input
-                type="text"
-                value={form.enderecoCep}
-                onChange={(e) => update("enderecoCep")(e.target.value)}
-                className="input-field"
-              />
-            </Field>
           </div>
         </Section>
+
 
         {/* Observações */}
         <Section title="Observações">
@@ -437,11 +640,11 @@ export default function EditLojaForm({
         </Section>
 
         {/* Actions */}
-        <div className="flex items-center gap-3 border-t border-border pt-6">
+        <div className="flex items-center gap-3 border-t-2 border-border pt-6">
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-emerald-600 px-8 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -457,7 +660,7 @@ export default function EditLojaForm({
           </button>
           <Link
             href={`/admin/lojas/${loja.id}`}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-white px-4 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border-2 border-border bg-white px-8 text-sm font-semibold text-foreground transition hover:bg-muted hover:border-gray-400"
           >
             Cancelar
           </Link>
@@ -477,12 +680,13 @@ function Section({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-      <div className="flex items-center gap-2">
-        {icon && <span className="text-emerald-700">{icon}</span>}
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+    <div className="space-y-4 rounded-lg border-2 border-border bg-card p-6 shadow-sm">
+      <div className="flex items-center gap-2 border-b border-border pb-3">
+        {icon && <span className="text-emerald-600">{icon}</span>}
+        <div className="h-1 w-1 rounded-full bg-emerald-600"></div>
+        <h3 className="text-base font-semibold tracking-tight text-br-deep">{title}</h3>
       </div>
-      <div>{children}</div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }
@@ -497,7 +701,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1.5 text-sm text-foreground">
+    <label className="flex flex-col gap-1.5 text-sm text-br-deep">
       <span className="font-medium">
         {label}
         {required && <span className="text-red-500"> *</span>}

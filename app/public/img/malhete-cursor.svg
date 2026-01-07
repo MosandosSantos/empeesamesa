@@ -1,0 +1,80 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Malhete de Juiz / Venerável Mestre -->
+
+  <!-- Sombra -->
+  <ellipse cx="16" cy="30" rx="8" ry="2" fill="#000000" opacity="0.2"/>
+
+  <!-- Cabo da malhete -->
+  <rect x="13" y="10" width="3" height="18" rx="1.5"
+        fill="#6B4423"
+        stroke="#3E2723"
+        stroke-width="0.5"/>
+
+  <!-- Detalhe do cabo (brilho da madeira) -->
+  <rect x="13.5" y="11" width="1" height="16"
+        fill="#8B5A3C"
+        opacity="0.6"/>
+
+  <!-- Base do cabo (punho) -->
+  <rect x="12.5" y="26" width="4" height="3" rx="0.5"
+        fill="#5D3A1A"
+        stroke="#3E2723"
+        stroke-width="0.5"/>
+
+  <!-- Cabeça da malhete (bloco de madeira escura) -->
+  <g>
+    <!-- Face principal -->
+    <rect x="8" y="2" width="13" height="8" rx="1"
+          fill="#3E2723"
+          stroke="#2C1810"
+          stroke-width="0.8"/>
+
+    <!-- Face lateral (3D) -->
+    <path d="M21 2 L25 4 L25 12 L21 10 Z"
+          fill="#2C1810"
+          stroke="#1A0F08"
+          stroke-width="0.6"/>
+
+    <!-- Face superior (3D) -->
+    <path d="M8 2 L21 2 L25 4 L12 4 Z"
+          fill="#4A3428"
+          stroke="#2C1810"
+          stroke-width="0.6"/>
+
+    <!-- Detalhes de textura da madeira -->
+    <line x1="10" y1="4" x2="10" y2="9"
+          stroke="#2C1810"
+          stroke-width="0.3"
+          opacity="0.5"/>
+    <line x1="13" y1="4" x2="13" y2="9"
+          stroke="#2C1810"
+          stroke-width="0.3"
+          opacity="0.5"/>
+    <line x1="16" y1="4" x2="16" y2="9"
+          stroke="#2C1810"
+          stroke-width="0.3"
+          opacity="0.5"/>
+    <line x1="19" y1="4" x2="19" y2="9"
+          stroke="#2C1810"
+          stroke-width="0.3"
+          opacity="0.5"/>
+  </g>
+
+  <!-- Anel metálico decorativo (onde o cabo encontra a cabeça) -->
+  <rect x="12.5" y="9" width="4" height="1.5"
+        fill="#B8860B"
+        stroke="#8B6914"
+        stroke-width="0.4"/>
+
+  <!-- Brilho metálico no anel -->
+  <rect x="13" y="9.2" width="3" height="0.4"
+        fill="#FFD700"
+        opacity="0.7"/>
+
+  <!-- Contorno para destaque -->
+  <rect x="8" y="2" width="13" height="8" rx="1"
+        fill="none"
+        stroke="#000000"
+        stroke-width="0.3"
+        opacity="0.3"/>
+</svg>

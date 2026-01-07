@@ -22,6 +22,9 @@
   --color-rer-gold-foreground: var(--rer-gold-foreground);
   --color-rer-red: var(--rer-red);
   --color-rer-red-foreground: var(--rer-red-foreground);
+  --color-login-button: var(--login-button);
+  --color-login-button-foreground: var(--login-button-foreground);
+  --color-login-button-hover: var(--login-button-hover);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -93,6 +96,12 @@
   --rer-gold-foreground: oklch(0.15 0 0);
   --rer-red: oklch(0.55 0.22 25);
   --rer-red-foreground: oklch(0.98 0 0);
+
+  /* Login Button Color - Terracotta/Brick Red (Masonic theme) */
+  /* Terracota clara - tom de telha e cerâmica */
+  --login-button: oklch(0.62 0.13 38);
+  --login-button-foreground: oklch(0.98 0 0);
+  --login-button-hover: oklch(0.56 0.14 38);
 }
 
 .dark {
@@ -135,6 +144,11 @@
   --rer-gold-foreground: oklch(0.15 0 0);
   --rer-red: oklch(0.6 0.23 25);
   --rer-red-foreground: oklch(0.98 0 0);
+
+  /* Login Button Color - Dark Mode (Terracotta) */
+  --login-button: oklch(0.64 0.14 38);
+  --login-button-foreground: oklch(0.98 0 0);
+  --login-button-hover: oklch(0.58 0.15 38);
 }
 
 @layer base {
@@ -146,8 +160,42 @@
   }
 }
 
+/* Cursor customizado - Malhete (martelo do Venerável Mestre) */
+.masonic-cursor {
+  cursor: url('/img/malhete-cursor.svg') 16 2, auto;
+}
+
+.masonic-cursor * {
+  cursor: url('/img/malhete-cursor.svg') 16 2, auto;
+}
+
+/* Cursor pointer mantém a mãozinha em botões e links */
+.masonic-cursor button,
+.masonic-cursor a,
+.masonic-cursor input[type="submit"] {
+  cursor: url('/img/malhete-cursor.svg') 16 2, pointer;
+}
+
 @layer components {
   .input-field {
     @apply h-11 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500;
+  }
+
+  .form-br-forest {
+    @apply text-emerald-950;
+  }
+
+  .form-br-forest .input-field {
+    @apply text-emerald-950 placeholder:text-emerald-800/60;
+  }
+
+  .form-br-forest input,
+  .form-br-forest select,
+  .form-br-forest textarea {
+    @apply text-emerald-950 placeholder:text-emerald-800/60;
+  }
+
+  .text-br-deep {
+    color: #0b2a14;
   }
 }

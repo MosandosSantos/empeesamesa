@@ -18,10 +18,6 @@ type Loja = {
   validade: string | null;
 };
 
-function formatDate(value: string | null) {
-  if (!value) return "sem data";
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(value));
-}
 
 export default function DeleteLojaForm({ loja }: { loja: Loja }) {
   const router = useRouter();
@@ -39,7 +35,10 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Erro ao excluir loja");
+        const errorMsg = data.details
+          ? `${data.error}\n\nDetalhes: ${data.details}`
+          : data.error || "Erro ao excluir loja";
+        throw new Error(errorMsg);
       }
 
       router.push("/admin/lojas");
@@ -85,9 +84,9 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
           {error && (
             <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
               <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
-              <div>
-                <p className="font-semibold text-red-900">Erro</p>
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="flex-1">
+                <p className="font-semibold text-red-900">Erro ao excluir loja</p>
+                <div className="mt-1 text-sm text-red-700 whitespace-pre-line">{error}</div>
               </div>
             </div>
           )}
@@ -125,7 +124,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
                 <span className="font-semibold text-foreground">Cidade/UF:</span> {loja.cidadeUf}
               </div>
               <div>
-                <span className="font-semibold text-foreground">Vencimento:</span> {formatDate(loja.validade)}
+                <span className="font-semibold text-foreground">Dia de vencimento:</span> {loja.validade || "-"}
               </div>
             </div>
           </div>

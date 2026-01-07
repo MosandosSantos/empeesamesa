@@ -57,10 +57,12 @@ export async function PUT(
         dataFundacao: body.dataFundacao ? new Date(body.dataFundacao) : null,
         contractNumber: body.contractNumber,
         mensalidadeAtiva: body.mensalidadeAtiva,
-        mensalidadeValidaAte: body.mensalidadeValidaAte ? new Date(body.mensalidadeValidaAte) : null,
+        mensalidadeVencimentoDia: body.mensalidadeVencimentoDia !== undefined ? body.mensalidadeVencimentoDia : undefined,
         valorMensalidade: body.valorMensalidade !== undefined ? body.valorMensalidade : undefined,
-        valorAnuidade: body.valorAnuidade !== undefined ? body.valorAnuidade : undefined,
         cnpj: body.cnpj || null,
+        razaoSocial: body.razaoSocial || null,
+        nomeFantasia: body.nomeFantasia || null,
+        dataAbertura: body.dataAbertura ? new Date(body.dataAbertura) : null,
         contatoNome: String(body.contatoNome).trim(),
         email: body.email || null,
         telefone: body.telefone || null,
@@ -72,6 +74,15 @@ export async function PUT(
         enderecoCidade: body.enderecoCidade || null,
         enderecoUf: body.enderecoUf || null,
         enderecoCep: body.enderecoCep || null,
+        // Dados bancários
+        bancoCodigo: body.bancoCodigo || null,
+        bancoNome: body.bancoNome || null,
+        bancoAgencia: body.bancoAgencia || null,
+        bancoAgenciaDigito: body.bancoAgenciaDigito || null,
+        bancoConta: body.bancoConta || null,
+        bancoContaDigito: body.bancoContaDigito || null,
+        bancoTipoConta: body.bancoTipoConta || null,
+        bancoPix: body.bancoPix || null,
         observacoes: body.observacoes || null,
       },
     });
@@ -108,9 +119,15 @@ export async function DELETE(
       select: {
         id: true,
         tenantId: true,
+        lojaMX: true,
         _count: {
           select: {
             members: true,
+            users: true,
+            payments: true,
+            duesCharges: true,
+            kpiSnapshots: true,
+            meetings: true,
           },
         },
       },
@@ -125,9 +142,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
     }
 
-    if (loja._count.members > 0) {
+    // Check for any related records that would prevent deletion
+    const blockers: string[] = [];
+    if (loja._count.members > 0) blockers.push(`${loja._count.members} membro(s)`);
+    if (loja._count.users > 0) blockers.push(`${loja._count.users} usuario(s)`);
+    if (loja._count.payments > 0) blockers.push(`${loja._count.payments} pagamento(s)`);
+    if (loja._count.duesCharges > 0) blockers.push(`${loja._count.duesCharges} cobranca(s)`);
+    if (loja._count.kpiSnapshots > 0) blockers.push(`${loja._count.kpiSnapshots} snapshot(s) de KPI`);
+    if (loja._count.meetings > 0) blockers.push(`${loja._count.meetings} sessao(oes)`);
+
+    if (blockers.length > 0) {
       return NextResponse.json(
-        { error: "Nao e possivel excluir loja com membros associados" },
+        {
+          error: `Nao e possivel excluir a loja "${loja.lojaMX}". Existem registros associados`,
+          details: blockers.join(", "),
+        },
         { status: 400 }
       );
     }

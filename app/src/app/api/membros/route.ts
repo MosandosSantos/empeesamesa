@@ -235,9 +235,10 @@ export async function GET(req: NextRequest) {
         email: true,
         situacao: true,
         class: true,
-        dataMESA: true,
-        dataEN: true,
-        dataCBCS: true,
+        dataAP: true,
+        dataCM: true,
+        dataMM: true,
+        dataMI: true,
         createdAt: true,
       },
     });

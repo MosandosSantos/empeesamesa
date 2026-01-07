@@ -22,6 +22,9 @@ const brandFont = Cinzel({
 export const metadata: Metadata = {
   title: "EsferaORDO - Sistema de Gestão RER",
   description: "Sistema de gestão para Loja Maçônica - Rito Escocês Retificado",
+  icons: {
+    icon: "/img/logo.svg",
+  },
 };
 
 export default function RootLayout({

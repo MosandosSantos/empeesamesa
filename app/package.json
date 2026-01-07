@@ -18,7 +18,12 @@
     "db:generate": "prisma generate",
     "db:reset": "prisma migrate reset",
     "db:backfill-potencias": "tsx scripts/backfill-potencias.ts",
-    "db:create-impessa-admin": "tsx scripts/create-impessa-admin.ts"
+    "db:create-impessa-admin": "tsx scripts/create-impessa-admin.ts",
+    "db:test": "node scripts/test-db-connection.js",
+    "db:clean": "tsx scripts/limpar-dados.ts",
+    "db:check-potencias": "tsx scripts/check-potencias.ts",
+    "db:check-ritos": "tsx scripts/check-ritos.ts",
+    "analyze:login-colors": "node scripts/analyze-colors-simple.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -52,6 +57,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.4",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",

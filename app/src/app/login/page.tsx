@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogIn, Loader2 } from "lucide-react";
+import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 
 function LoginForm() {
@@ -14,6 +14,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -49,137 +50,128 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen">
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-8">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="/img/login.png"
+          src="/img/login-bg-templo.png"
           alt="Background"
           fill
           priority
           className="object-cover"
           quality={90}
         />
-        {/* Mobile Overlay */}
-        <div className="absolute inset-0 bg-black/40 md:bg-transparent md:bg-gradient-to-r md:from-black/30 md:via-transparent md:to-black/20" />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
 
-      {/* Content Container */}
-      <div className="relative z-10 flex w-full items-center justify-center px-4 py-6 md:justify-end md:px-8 lg:px-16">
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="mb-4 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">
+            SAL do GOISC
+          </h1>
+          <p className="mt-1 text-xs text-white/90 drop-shadow leading-relaxed">
+            Sistema de Administra??o de Lojas do<br />Grande Oriente Independente de Santa Catarina
+          </p>
+        </div>
+
         {/* Glassmorphism Login Card */}
-        <div className="w-full max-w-md">
-          {/* Logo / Header */}
-          <div className="mb-4 text-center">
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-xl bg-rer-green/90 shadow-2xl backdrop-blur-xl border border-white/20">
-              <span className="text-2xl font-bold text-rer-green-foreground">EM</span>
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">
-              EsferaORDO
-            </h1>
-            <p className="mt-1 text-xs text-white/90 drop-shadow">
-              Sistema de Gestão - Rito Escocês Retificado
+        <div className="rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl p-6 md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white drop-shadow-md">
+              Bem-vindo
+            </h2>
+            <p className="mt-1 text-sm text-white/80">
+              Fa?a login para acessar o sistema
             </p>
           </div>
 
-          {/* Glassmorphism Login Card */}
-          <div className="rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl p-6 md:p-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white drop-shadow-md">
-                Bem-vindo
-              </h2>
-              <p className="mt-1 text-sm text-white/80">
-                Faça login para acessar o sistema
-              </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-white mb-1.5 drop-shadow"
+              >
+                E-mail
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="w-full bg-white/20 backdrop-blur-md border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-rer-gold focus:ring-rer-gold/50 transition-all duration-200 h-10 text-sm"
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-semibold text-white mb-1.5 drop-shadow"
-                >
-                  E-mail
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full bg-white/20 backdrop-blur-md border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-rer-gold focus:ring-rer-gold/50 transition-all duration-200 h-10 text-sm"
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-semibold text-white mb-1.5 drop-shadow"
-                >
-                  Senha
-                </label>
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-white mb-1.5 drop-shadow"
+              >
+                Senha
+              </label>
+              <div className="relative">
                 <Input
                   id="password"
-                  type="password"
-                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="????????"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="w-full bg-white/20 backdrop-blur-md border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-rer-gold focus:ring-rer-gold/50 transition-all duration-200 h-10 text-sm"
+                  className="w-full bg-white/20 backdrop-blur-md border-white/30 text-white placeholder:text-white/50 focus:bg-white/30 focus:border-rer-gold focus:ring-rer-gold/50 transition-all duration-200 h-10 text-sm pr-10"
                 />
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="rounded-xl bg-rer-red/20 backdrop-blur-md border border-rer-red/30 p-3 shadow-lg">
-                  <p className="text-xs font-medium text-white drop-shadow">{error}</p>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full bg-rer-green hover:bg-rer-green/90 text-white h-10 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/20"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Entrar
-                  </>
-                )}
-              </Button>
-            </form>
-
-            {/* Demo Credentials */}
-            <div className="mt-5 rounded-xl bg-rer-gold/15 backdrop-blur-md border border-rer-gold/30 p-3 shadow-lg">
-              <p className="mb-1.5 text-xs font-bold text-rer-gold uppercase tracking-wide drop-shadow">
-                Credenciais de teste
-              </p>
-              <div className="space-y-0.5 text-xs text-white/90">
-                <p className="font-mono">
-                  <span className="font-semibold">E-mail:</span> admin@lojamaconica.com.br
-                </p>
-                <p className="font-mono">
-                  <span className="font-semibold">Senha:</span> admin123
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="mt-4 text-center text-xs text-white/70 drop-shadow">
-            <p>&copy; {new Date().getFullYear()} EsferaORDO. Todos os direitos reservados.</p>
-          </div>
+            {/* Error Message */}
+            {error && (
+              <div className="rounded-xl bg-rer-red/20 backdrop-blur-md border border-rer-red/30 p-3 shadow-lg">
+                <p className="text-xs font-medium text-white drop-shadow">{error}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full bg-login-button/80 hover:bg-login-button-hover/90 text-login-button-foreground h-10 text-sm font-semibold rounded-xl shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 border border-white/30 backdrop-blur-sm"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Entrar
+                </>
+              )}
+            </Button>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 text-center text-xs text-white/70 drop-shadow">
+          <p>&copy; {new Date().getFullYear()} SAL do GOISC. Todos os direitos reservados.</p>
         </div>
       </div>
     </div>

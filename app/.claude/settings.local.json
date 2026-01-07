@@ -4,7 +4,12 @@
       "Bash(npm run db:seed:*)",
       "Bash(node -e:*)",
       "Bash(npm uninstall:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(test:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

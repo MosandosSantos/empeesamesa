@@ -15,9 +15,10 @@ function fmtDate(value: Date | null | undefined) {
 function getClasseLabel(classe: string | null) {
   if (!classe) return "-";
   const map: Record<string, string> = {
-    MESA: "MESA (Mestre de Santo André)",
-    EN: "EN (Escudeiro Noviço)",
-    CBCS: "CBCS (Cavaleiro Benfeitor da Cidade Santa)",
+    AP: "AP (Aprendiz)",
+    CM: "CM (Companheiro)",
+    MM: "MM (Mestre)",
+    MI: "MI (Mestre Instalado)",
   };
   return map[classe] ?? classe;
 }
@@ -100,18 +101,22 @@ export default async function MembroDetalhePage({
 
         <Divider />
 
-        <Section title="Progressão nas Classes (RER)">
+        <Section title="Progressão nos Graus Maçônicos">
           <Field
-            label="Data MESA (Mestre de Santo André)"
-            value={fmtDate(member.dataMESA)}
+            label="Data AP (Aprendiz)"
+            value={fmtDate(member.dataAP)}
           />
           <Field
-            label="Data EN (Escudeiro Noviço)"
-            value={fmtDate(member.dataEN)}
+            label="Data CM (Companheiro)"
+            value={fmtDate(member.dataCM)}
           />
           <Field
-            label="Data CBCS (Cavaleiro Benfeitor)"
-            value={fmtDate(member.dataCBCS)}
+            label="Data MM (Mestre)"
+            value={fmtDate(member.dataMM)}
+          />
+          <Field
+            label="Data MI (Mestre Instalado)"
+            value={fmtDate(member.dataMI)}
           />
         </Section>
 

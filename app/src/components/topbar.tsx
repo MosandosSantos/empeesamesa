@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Search, Bell, User, LogOut } from "lucide-react";
+import { Menu, Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +26,6 @@ interface UserData {
 
 export function TopBar({ onMenuClick }: TopBarProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<UserData>({
     name: "Admin",
     email: "admin@esferaordo.com",
@@ -60,12 +58,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     router.push("/logout");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implementar busca global
-    console.log("Searching for:", searchQuery);
-  };
-
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background px-4 shadow-sm lg:px-6 relative">
       <div className="flex items-center gap-2 z-10">
@@ -80,23 +72,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           <Menu className="h-5 w-5" />
         </Button>
       </div>
-
-      {/* Search Bar */}
-      <form
-        onSubmit={handleSearch}
-        className="absolute left-1/2 top-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4"
-      >
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4"
-          />
-        </div>
-      </form>
 
       {/* Quick Actions */}
       <div className="ml-auto flex items-center gap-2 z-10">

@@ -18,23 +18,12 @@ function getSituacaoColor(situacao: string) {
   return map[situacao] ?? "bg-slate-100 text-slate-800 border-slate-200";
 }
 
-function getStatusMensalidade(
-  ativa: boolean,
-  validade: Date | null
-): { label: string; color: string } {
+function getStatusMensalidade(ativa: boolean): { label: string; color: string } {
   if (!ativa) {
     return {
       label: "Inativa",
       color: "bg-slate-200 text-slate-800 border-slate-300",
     };
-  }
-  if (!validade) {
-    return { label: "Ativa", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
-  }
-  const now = new Date();
-  const vencida = validade.getTime() < now.getTime();
-  if (vencida) {
-    return { label: "Vencida", color: "bg-red-100 text-red-800 border-red-200" };
   }
   return { label: "Ativa", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
 }
@@ -83,10 +72,7 @@ export default async function LojaDetalhePage({
     notFound();
   }
 
-  const statusMensalidade = getStatusMensalidade(
-    loja.mensalidadeAtiva,
-    loja.mensalidadeValidaAte
-  );
+  const statusMensalidade = getStatusMensalidade(loja.mensalidadeAtiva);
 
   return (
     <div className="space-y-6">
@@ -160,6 +146,7 @@ export default async function LojaDetalhePage({
           />
           <Field label="Rito" value={loja.rito?.nome} />
           <Field label="CNPJ" value={loja.cnpj} />
+          <Field label="Razão social" value={loja.razaoSocial} />
         </Section>
 
         <Divider />
@@ -171,8 +158,8 @@ export default async function LojaDetalhePage({
             value={loja.mensalidadeAtiva ? "Ativa" : "Inativa"}
           />
           <Field
-            label="Mensalidade Válida Até"
-            value={fmtDate(loja.mensalidadeValidaAte)}
+            label="Dia de Vencimento da Mensalidade"
+            value={loja.mensalidadeVencimentoDia ? `Dia ${loja.mensalidadeVencimentoDia}` : "-"}
           />
           <Field
             label="Tenant Criado em"
@@ -281,7 +268,7 @@ function Section({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         {icon && <span className="text-emerald-700">{icon}</span>}
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <h2 className="text-lg font-semibold text-br-deep">{title}</h2>
       </div>
       <div className={gridClass}>{children}</div>
     </div>
@@ -291,10 +278,10 @@ function Section({
 function Field({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="rounded-md border border-border bg-background px-3 py-2.5 transition hover:border-emerald-200">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-emerald-900">
         {label}
       </div>
-      <div className="mt-1 text-sm font-medium text-foreground">{value || "-"}</div>
+      <div className="mt-1 text-sm font-medium text-emerald-950">{value || "-"}</div>
     </div>
   );
 }

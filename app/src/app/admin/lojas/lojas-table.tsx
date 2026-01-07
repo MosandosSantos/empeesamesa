@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { Eye, Pencil, Trash2, Plus } from "lucide-react";
+import { Eye, Pencil, Trash2, Plus, Users } from "lucide-react";
 
 export type LojaRow = {
   id: string;
@@ -11,13 +11,14 @@ export type LojaRow = {
   tenantId: string;
   tenantName: string;
   potencia?: string | null;
+  rito?: string | null;
   contrato: string;
   contatoNome?: string | null;
   telefone?: string | null;
   status: "ATIVA" | "VENCIDA" | "SUSPENSA";
   validade: string | null;
   situacao: string;
-  cidadeUf: string;
+  totalMembros: number;
 };
 
 const PAGE_SIZE = 10;
@@ -41,7 +42,8 @@ export default function LojasTable({
         l.tenantName.toLowerCase().includes(texto) ||
         l.contrato.toLowerCase().includes(texto) ||
         (l.potencia ?? "").toLowerCase().includes(texto) ||
-        (l.cidadeUf ?? "").toLowerCase().includes(texto);
+        (l.rito ?? "").toLowerCase().includes(texto) ||
+        String(l.totalMembros ?? "").includes(texto);
       const matchStatus = filtroStatus === "Todas" ? true : l.status === filtroStatus;
       return matchTexto && matchStatus;
     });
@@ -63,7 +65,7 @@ export default function LojasTable({
               setBusca(e.target.value);
               setPagina(1);
             }}
-            placeholder="Buscar por nome, tenant, contrato ou cidade"
+            placeholder="Buscar por tenant, contrato, potencia, rito ou cidade"
             className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none md:w-96"
           />
           <select
@@ -99,13 +101,14 @@ export default function LojasTable({
         <table className="min-w-full text-left text-xs">
           <thead className="bg-[#3b4d3b] text-white">
             <tr>
-              <Th>Loja</Th>
+              <Th>Tenant</Th>
               <Th>Potencia</Th>
+              <Th>Rito</Th>
               <Th>Contato</Th>
               <Th>Telefone</Th>
-              <Th>Vencimento</Th>
+              <Th>Dia vencimento</Th>
               <Th>Status</Th>
-              <Th>Cidade/UF</Th>
+              <Th>Membros</Th>
               <Th className="text-right">Acoes</Th>
             </tr>
           </thead>
@@ -125,6 +128,11 @@ export default function LojasTable({
                 </Td>
                 <Td>
                   <div className="text-[11px] text-muted-foreground">
+                    {l.rito ?? "-"}
+                  </div>
+                </Td>
+                <Td>
+                  <div className="text-[11px] text-muted-foreground">
                     {l.contatoNome ?? "Sem contato"}
                   </div>
                 </Td>
@@ -136,31 +144,46 @@ export default function LojasTable({
                
                 <Td>
                   <div className="text-[11px] text-muted-foreground">
-                    {l.validade ? formatDate(l.validade) : "sem data"}
+                    {l.validade || "-"}
                   </div>
                 </Td>
                 <Td>
                   <StatusDot status={l.status} />
                 </Td>
-                <Td>{l.cidadeUf}</Td>
+                <Td>{l.totalMembros}</Td>
                 <Td className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/admin/lojas/${l.id}`} className="inline-flex">
-                      <IconButton label="Visualizar" variant="ghost" icon={<Eye size={16} />} />
-                    </Link>
-                    <Link href={`/admin/lojas/${l.id}/editar`} className="inline-flex">
-                      <IconButton label="Editar" variant="default" icon={<Pencil size={16} />} />
-                    </Link>
-                    <Link href={`/admin/lojas/${l.id}/excluir`} className="inline-flex">
-                      <IconButton label="Excluir" variant="danger" icon={<Trash2 size={16} />} />
-                    </Link>
+                    <IconButton
+                      label="Ver membros (em breve)"
+                      variant="ghost"
+                      icon={<Users size={16} />}
+                      disabled
+                    />
+                    <IconLink
+                      href={`/admin/lojas/${l.id}`}
+                      label="Visualizar"
+                      variant="ghost"
+                      icon={<Eye size={16} />}
+                    />
+                    <IconLink
+                      href={`/admin/lojas/${l.id}/editar`}
+                      label="Editar"
+                      variant="default"
+                      icon={<Pencil size={16} />}
+                    />
+                    <IconLink
+                      href={`/admin/lojas/${l.id}/excluir`}
+                      label="Excluir"
+                      variant="danger"
+                      icon={<Trash2 size={16} />}
+                    />
                   </div>
                 </Td>
               </tr>
             ))}
             {lojasPagina.length === 0 && (
               <tr>
-                <Td colSpan={8} className="py-8 text-center text-muted-foreground">
+                <Td colSpan={9} className="py-8 text-center text-muted-foreground">
                   Nenhuma loja encontrada com os filtros aplicados.
                 </Td>
               </tr>
@@ -249,7 +272,40 @@ function IconButton({
   label,
   icon,
   variant,
+  disabled = false,
 }: {
+  label: string;
+  icon: ReactNode;
+  variant: "default" | "ghost" | "danger";
+  disabled?: boolean;
+}) {
+  const base =
+    "flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white text-xs font-semibold shadow-sm transition hover:shadow-md";
+  const styles = {
+    default: "text-emerald-700",
+    ghost: "text-foreground",
+    danger: "text-red-600",
+  }[variant];
+  const disabledStyles = disabled ? "cursor-not-allowed opacity-50" : "hover:shadow-md";
+  return (
+    <button
+      className={`${base} ${styles} ${disabledStyles}`}
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function IconLink({
+  href,
+  label,
+  icon,
+  variant,
+}: {
+  href: string;
   label: string;
   icon: ReactNode;
   variant: "default" | "ghost" | "danger";
@@ -262,8 +318,8 @@ function IconButton({
     danger: "text-red-600",
   }[variant];
   return (
-    <button className={`${base} ${styles}`} aria-label={label} title={label}>
+    <Link href={href} className={`${base} ${styles}`} aria-label={label} title={label}>
       {icon}
-    </button>
+    </Link>
   );
 }

@@ -52,6 +52,7 @@ model User {
   id           String   @id @default(uuid())
   tenantId     String
   lojaId       String?  // Nova coluna: usuário pertence a uma Loja
+  potenciaId   String?
   email        String
   passwordHash String?  // Nullable até definir senha
   role         String   @default("MEMBER") // SYS_ADMIN, LODGE_ADMIN, SECRETARY, FINANCE, MEMBER
@@ -64,12 +65,14 @@ model User {
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   loja   Loja?  @relation(fields: [lojaId], references: [id], onDelete: Restrict)
+  potencia Potencia? @relation(fields: [potenciaId], references: [id], onDelete: Restrict)
   passwordInviteTokens PasswordInviteToken[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([email])
   @@index([lojaId])
+  @@index([potenciaId])
   @@map("user")
 }
 
@@ -173,12 +176,13 @@ model Member {
 
   // Estado
   situacao String @default("ATIVO") // ATIVO, PROPOSTO, ADORMECIDO
-  class    String? // MESA, EN, CBCS
+  class    String? // AP, CM, MM, MI
 
-  // Datas de progressão nas classes do RER
-  dataMESA DateTime? // Data em que se tornou Mestre de Santo André
-  dataEN   DateTime? // Data em que se tornou Escudeiro Noviço
-  dataCBCS DateTime? // Data em que se tornou Cavaleiro Benfeitor da Cidade Santa
+  // Datas de progressão nos graus maçônicos
+  dataAP DateTime? // Data em que se tornou Aprendiz
+  dataCM DateTime? // Data em que se tornou Companheiro
+  dataMM DateTime? // Data em que se tornou Mestre
+  dataMI DateTime? // Data em que se tornou Mestre Instalado
 
   // Mídia
   fotoUrl String?
@@ -242,6 +246,7 @@ model Potencia {
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lojas  Loja[]
+  users  User[]
 
   @@unique([tenantId, nome])
   @@index([tenantId])
@@ -283,12 +288,16 @@ model Loja {
   contatoNome      String?
 
   // Contrato / SaaS
-  contractNumber      String   @default("PENDENTE")
-  mensalidadeAtiva    Boolean  @default(true)
-  mensalidadeValidaAte DateTime?
+  contractNumber           String   @default("PENDENTE")
+  mensalidadeAtiva         Boolean  @default(true)
+  mensalidadeVencimentoDia Int?     // Dia do mês para vencimento (1-31)
 
-  // Documentos (BR)
-  cnpj String?
+  // Documentos (BR) - CNPJ e Cadastro Nacional
+  cnpj                        String?
+  razaoSocial                 String?
+  nomeFantasia                String?   // Título do estabelecimento (nome fantasia)
+  dataAbertura                DateTime? // Data de abertura do estabelecimento
+  // Campos de classificação do CNPJ removidos a pedido do usuário.
 
   // Contato
   email    String?
@@ -304,6 +313,16 @@ model Loja {
   enderecoUf          String? // 2 letras: RJ, SP, etc.
   enderecoCep         String?
 
+  // Dados Bancários (para recebimento de pagamentos)
+  bancoCodigo       String? // Código do banco (ex: 001, 237, 341)
+  bancoNome         String? // Nome do banco (ex: Banco do Brasil, Bradesco)
+  bancoAgencia      String? // Número da agência
+  bancoAgenciaDigito String? // Dígito verificador da agência (opcional)
+  bancoConta        String? // Número da conta
+  bancoContaDigito  String? // Dígito verificador da conta
+  bancoTipoConta    String? // Tipo: CORRENTE, POUPANCA
+  bancoPix          String? // Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)
+
   // Metadados
   dataFundacao DateTime?
   situacao     String       @default("ATIVA") // ATIVA, ADORMECIDA, SUSPENSA, EXTINGUIDA
@@ -312,9 +331,8 @@ model Loja {
   // Relação com Rito (opcional)
   ritoId String?
 
-  // Valores de mensalidade e anuidade (Sprint Pagamentos)
+  // Valores de mensalidade (Sprint Pagamentos)
   valorMensalidade Decimal @default(150.00) @db.Decimal(10, 2)
-  valorAnuidade    Decimal @default(500.00) @db.Decimal(10, 2)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -335,7 +353,7 @@ model Loja {
   @@index([tenantId])
   @@index([potenciaId])
   @@index([situacao])
-  @@index([mensalidadeAtiva, mensalidadeValidaAte])
+  @@index([mensalidadeAtiva])
   @@map("loja")
 }
 

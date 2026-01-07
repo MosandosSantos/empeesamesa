@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Mail,
   Building2,
+  Landmark,
   ChevronLeft,
   ChevronRight,
   Lock,
@@ -37,24 +38,14 @@ const navigationItems = [
     icon: Home,
   },
   {
-    label: "Lojas (SaaS)",
-    href: "/admin/lojas",
-    icon: Building2,
+    label: "Potencias",
+    href: "/potencias",
+    icon: Landmark,
   },
   {
-    label: "Usuários",
-    href: "/usuarios",
-    icon: UserCog,
-    subItems: [
-      {
-        label: "Gerenciar Usuários",
-        href: "/usuarios",
-      },
-      {
-        label: "Trocar Senha",
-        href: "/senha",
-      },
-    ],
+    label: "Lojas",
+    href: "/admin/lojas",
+    icon: Building2,
   },
   {
     label: "Membros",
@@ -81,6 +72,22 @@ const navigationItems = [
     href: "/inventario",
     icon: Package,
   },
+   {
+    label: "Usuários",
+    href: "/usuarios",
+    icon: UserCog,
+    subItems: [
+      {
+        label: "Gerenciar Usuários",
+        href: "/usuarios",
+      },
+      {
+        label: "Trocar Senha",
+        href: "/senha",
+      },
+    ],
+  },
+ 
 ];
 
 interface SidebarProps {
@@ -120,7 +127,7 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
         <Link href="/" className="flex items-center gap-2" onClick={onClose}>
           <Image
             src="/img/logo.svg"
-            alt="EsferaOrdo"
+            alt="SAL GOISC"
             width={36}
             height={36}
             className="h-9 w-9 flex-shrink-0"
@@ -128,8 +135,7 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
           />
           {!isCollapsed && (
             <span className="text-base font-semibold font-[var(--font-brand)]">
-              <span className="text-rer-green">Esfera</span>
-              <span className="text-rer-gold">Ordo</span>
+              <span className="text-rer-green">SAL GOISC</span>
             </span>
           )}
         </Link>

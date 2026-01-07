@@ -9,9 +9,10 @@ type MembersResponse = {
     nomeCompleto: string;
     situacao: string;
     class: string | null;
-    dataMESA: string | null;
-    dataEN: string | null;
-    dataCBCS: string | null;
+    dataAP: string | null;
+    dataCM: string | null;
+    dataMM: string | null;
+    dataMI: string | null;
   }>;
 };
 
@@ -35,15 +36,16 @@ export default function MembrosPage() {
         }
 
         const data: MembersResponse = await response.json();
-        const rows = data.members.map((m) => ({
-          id: m.id,
-          nome: m.nomeCompleto,
-          situacao: m.situacao,
-          classe: m.class ?? "",
-          dataMESA: m.dataMESA ? new Date(m.dataMESA) : null,
-          dataEN: m.dataEN ? new Date(m.dataEN) : null,
-          dataCBCS: m.dataCBCS ? new Date(m.dataCBCS) : null,
-        }));
+      const rows = data.members.map((m) => ({
+        id: m.id,
+        nome: m.nomeCompleto,
+        situacao: m.situacao,
+        classe: m.class ?? "",
+        dataAP: m.dataAP ? new Date(m.dataAP) : null,
+        dataCM: m.dataCM ? new Date(m.dataCM) : null,
+        dataMM: m.dataMM ? new Date(m.dataMM) : null,
+        dataMI: m.dataMI ? new Date(m.dataMI) : null,
+      }));
 
         if (mounted) {
           setMembers(rows);

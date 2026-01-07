@@ -38,9 +38,10 @@ const situacaoOptions = [
 ];
 
 const classeOptions = [
-  { value: "MESA", label: "MESA" },
-  { value: "EN", label: "EN" },
-  { value: "CBCS", label: "CBCS" },
+  { value: "AP", label: "AP (Aprendiz)" },
+  { value: "CM", label: "CM (Companheiro)" },
+  { value: "MM", label: "MM (Mestre)" },
+  { value: "MI", label: "MI (Mestre Instalado)" },
 ];
 
 const ritoOptions = [
@@ -91,10 +92,11 @@ export default function EditMemberForm({ member }: { member: Member }) {
     rito: member.rito || "RER",
     dataEntradaLojaAtual: formatDateForInput(member.dataEntradaLojaAtual),
     situacao: member.situacao || "ATIVO",
-    class: member.class || "MESA",
-    dataMESA: formatDateForInput(member.dataMESA),
-    dataEN: formatDateForInput(member.dataEN),
-    dataCBCS: formatDateForInput(member.dataCBCS),
+    class: member.class || "AP",
+    dataAP: formatDateForInput(member.dataAP),
+    dataCM: formatDateForInput(member.dataCM),
+    dataMM: formatDateForInput(member.dataMM),
+    dataMI: formatDateForInput(member.dataMI),
     dataIniciacao: formatDateForInput(member.dataIniciacao),
     lojaIniciacaoNome: member.lojaIniciacaoNome || "",
     lojaIniciacaoNumero: member.lojaIniciacaoNumero || "",
@@ -581,32 +583,41 @@ export default function EditMemberForm({ member }: { member: Member }) {
             </div>
           </SectionCard>
 
-          {/* Classes RER */}
-          <SectionCard title="Classes do Rito Escocês Retificado" icon={Shield}>
-            <div className="grid gap-6 md:grid-cols-3">
-              <FormField label="Data MESA">
+          {/* Graus Maçônicos */}
+          <SectionCard title="Graus Maçônicos" icon={Shield}>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <FormField label="Data AP (Aprendiz)">
                 <input
                   type="date"
-                  value={form.dataMESA}
-                  onChange={(e) => update("dataMESA")(e.target.value)}
+                  value={form.dataAP}
+                  onChange={(e) => update("dataAP")(e.target.value)}
                   className="input-field"
                 />
               </FormField>
 
-              <FormField label="Data EN">
+              <FormField label="Data CM (Companheiro)">
                 <input
                   type="date"
-                  value={form.dataEN}
-                  onChange={(e) => update("dataEN")(e.target.value)}
+                  value={form.dataCM}
+                  onChange={(e) => update("dataCM")(e.target.value)}
                   className="input-field"
                 />
               </FormField>
 
-              <FormField label="Data CBCS">
+              <FormField label="Data MM (Mestre)">
                 <input
                   type="date"
-                  value={form.dataCBCS}
-                  onChange={(e) => update("dataCBCS")(e.target.value)}
+                  value={form.dataMM}
+                  onChange={(e) => update("dataMM")(e.target.value)}
+                  className="input-field"
+                />
+              </FormField>
+
+              <FormField label="Data MI (Mestre Instalado)">
+                <input
+                  type="date"
+                  value={form.dataMI}
+                  onChange={(e) => update("dataMI")(e.target.value)}
                   className="input-field"
                 />
               </FormField>

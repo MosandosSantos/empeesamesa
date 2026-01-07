@@ -25,9 +25,10 @@ function getSituacaoColor(situacao: string) {
 function getClasseLabel(classe: string | null) {
   if (!classe) return "-";
   const map: Record<string, string> = {
-    MESA: "MESA",
-    EN: "EN",
-    CBCS: "CBCS",
+    AP: "AP (Aprendiz)",
+    CM: "CM (Companheiro)",
+    MM: "MM (Mestre)",
+    MI: "MI (Mestre Instalado)",
   };
   return map[classe] ?? classe;
 }

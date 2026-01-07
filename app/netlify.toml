@@ -1,0 +1,64 @@
+# Netlify Configuration for EsferaORDO Next.js Application
+# Docs: https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  # Directory with package.json (current directory)
+  base = "."
+
+  # Build command
+  command = "npm run build"
+
+  # Directory with built files
+  publish = ".next"
+
+[build.environment]
+  # Node.js version
+  NODE_VERSION = "20"
+
+  # Enable Next.js on Netlify
+  NEXT_USE_NETLIFY_EDGE = "false"
+
+# Redirect rules for Next.js App Router
+[[redirects]]
+  from = "/*"
+  to = "/:splat"
+  status = 200
+  force = false
+
+# Headers for security and caching
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Functions configuration (for API routes)
+[functions]
+  node_bundler = "esbuild"
+  # 10 seconds timeout (Netlify Free tier max)
+  # Upgrade to Pro for 26 seconds
+  timeout = 10
+
+# Plugins
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Dev server settings (for netlify dev)
+[dev]
+  command = "npm run dev"
+  port = 3000
+  targetPort = 3000
+  autoLaunch = false

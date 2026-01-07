@@ -2,11 +2,9 @@ import prisma from "@/lib/prisma";
 import { NewMemberForm, type LojaOption } from "./new-member-form";
 
 export default async function NovoMembroPage() {
-  const now = new Date();
   const activeLojas = await prisma.loja.findMany({
     where: {
       mensalidadeAtiva: true,
-      OR: [{ mensalidadeValidaAte: null }, { mensalidadeValidaAte: { gte: now } }],
     },
     orderBy: [{ lojaMX: "asc" }],
     select: {
@@ -15,7 +13,7 @@ export default async function NovoMembroPage() {
       lojaMX: true,
       numero: true,
       contractNumber: true,
-      mensalidadeValidaAte: true,
+      mensalidadeVencimentoDia: true,
       enderecoCidade: true,
       enderecoUf: true,
     },
@@ -27,7 +25,9 @@ export default async function NovoMembroPage() {
     label: loja.lojaMX ?? "Sem nome",
     numero: loja.numero ?? null,
     contractNumber: loja.contractNumber,
-    validade: loja.mensalidadeValidaAte ? loja.mensalidadeValidaAte.toISOString() : null,
+    validade: loja.mensalidadeVencimentoDia
+      ? `Dia ${loja.mensalidadeVencimentoDia}`
+      : null,
     cidadeUf:
       loja.enderecoCidade && loja.enderecoUf
         ? `${loja.enderecoCidade} / ${loja.enderecoUf}`

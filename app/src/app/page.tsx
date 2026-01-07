@@ -32,7 +32,7 @@ export default async function Home() {
     value: item._count._all,
   })).sort((a, b) => b.value - a.value);
 
-  const classOrder = ["MESA", "EN", "CBCS"];
+  const classOrder = ["AP", "CM", "MM", "MI"];
   const classMap = new Map(classCounts.map((item) => [item.class ?? "", item._count._all]));
   const classDistribution = classOrder.map((key) => ({
     name: key,

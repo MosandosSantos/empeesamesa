@@ -6,31 +6,30 @@ async function fetchLojas(): Promise<{ rows: LojaRow[]; stats: { total: number; 
   const lojas = await prisma.loja.findMany({
     include: {
       tenant: { select: { id: true, name: true } },
-      potencia: { select: { nome: true } },
+      potencia: { select: { sigla: true } },
+      rito: { select: { sigla: true, nome: true } },
+      _count: { select: { members: true } },
     },
     orderBy: [{ tenantId: "asc" }, { lojaMX: "asc" }],
   });
 
   const rows: LojaRow[] = lojas.map((loja) => {
-    const vencida = loja.mensalidadeValidaAte !== null && loja.mensalidadeValidaAte.getTime() < now.getTime();
-    const ativa = loja.mensalidadeAtiva && !vencida;
+    const status = loja.mensalidadeAtiva ? "ATIVA" : "SUSPENSA";
     return {
       id: loja.id,
-      nome: loja.lojaMX,
+      nome: loja.tenant.name,
       numero: loja.numero ?? undefined,
       tenantName: loja.tenant.name,
       tenantId: loja.tenant.id,
-      potencia: loja.potencia?.nome,
+      potencia: loja.potencia?.sigla,
+      rito: loja.rito?.sigla || loja.rito?.nome || null,
       contrato: loja.contractNumber,
       contatoNome: loja.contatoNome,
       telefone: loja.telefone,
       situacao: loja.situacao,
-      status: ativa ? "ATIVA" : vencida ? "VENCIDA" : "SUSPENSA",
-      validade: loja.mensalidadeValidaAte ? loja.mensalidadeValidaAte.toISOString() : null,
-      cidadeUf:
-        loja.enderecoCidade && loja.enderecoUf
-          ? `${loja.enderecoCidade} / ${loja.enderecoUf}`
-          : loja.enderecoCidade || loja.enderecoUf || "-",
+      status: status,
+      validade: loja.mensalidadeVencimentoDia ? `Dia ${loja.mensalidadeVencimentoDia}` : null,
+      totalMembros: loja._count.members,
     };
   });
 

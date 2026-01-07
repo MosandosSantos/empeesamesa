@@ -117,9 +117,10 @@ const situacaoOptions = [
 ];
 
 const classeOptions = [
-  { value: "MESA", label: "MESA" },
-  { value: "EN", label: "EN" },
-  { value: "CBCS", label: "CBCS" },
+  { value: "AP", label: "AP (Aprendiz)" },
+  { value: "CM", label: "CM (Companheiro)" },
+  { value: "MM", label: "MM (Mestre)" },
+  { value: "MI", label: "MI (Mestre Instalado)" },
 ];
 
 const ritoOptions = [
@@ -1054,81 +1055,106 @@ export function NewMemberForm({ lojas }: { lojas: LojaOption[] }) {
           {currentStep === "rer" && (
             <div className="space-y-6">
               <SectionCard
-                title="Classes do Rito Escocês Retificado"
-                description="Datas de recepção nas classes superiores do RER"
+                title="Graus Maçônicos"
+                description="Datas de progressão nos graus da Maçonaria Simbólica"
                 icon={Shield}
               >
                 <div className="space-y-6">
-                  {/* MESA - Mestre de Santo André */}
+                  {/* AP - Aprendiz */}
                   <div className="rounded-lg bg-emerald-50/50 p-6">
                     <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-emerald-900">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                        I
+                        1°
                       </span>
-                      Recepção como Mestre de Santo André (MESA)
+                      Iniciação como Aprendiz (AP)
                     </h4>
                     <div className="grid gap-6 md:grid-cols-2">
-                      <FormField label="Data de recepção MESA">
+                      <FormField label="Data de iniciação AP">
                         <input
                           type="date"
-                          value={form.dataMESA}
-                          onChange={(e) => update("dataMESA")(e.target.value)}
+                          value={form.dataAP}
+                          onChange={(e) => update("dataAP")(e.target.value)}
                           className="input-field"
                         />
                       </FormField>
                       <div className="flex items-center rounded-lg bg-emerald-100 px-4 py-3">
                         <p className="text-xs text-emerald-800">
-                          <strong>MESA:</strong> Primeira classe da Ordem Interior do RER, também conhecida como Mestre de Santo André.
+                          <strong>AP:</strong> Primeiro grau da Maçonaria Simbólica, onde o maçom inicia sua jornada de aprendizado.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* EN - Escudeiro Noviço */}
+                  {/* CM - Companheiro */}
                   <div className="rounded-lg bg-blue-50/50 p-6">
                     <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-blue-900">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                        II
+                        2°
                       </span>
-                      Recepção como Escudeiro Noviço (EN)
+                      Elevação a Companheiro (CM)
                     </h4>
                     <div className="grid gap-6 md:grid-cols-2">
-                      <FormField label="Data de recepção EN">
+                      <FormField label="Data de elevação CM">
                         <input
                           type="date"
-                          value={form.dataEN}
-                          onChange={(e) => update("dataEN")(e.target.value)}
+                          value={form.dataCM}
+                          onChange={(e) => update("dataCM")(e.target.value)}
                           className="input-field"
                         />
                       </FormField>
                       <div className="flex items-center rounded-lg bg-blue-100 px-4 py-3">
                         <p className="text-xs text-blue-800">
-                          <strong>EN:</strong> Segunda classe da Ordem Interior, período probatório de um ano antes da Armadura.
+                          <strong>CM:</strong> Segundo grau da Maçonaria, representa o desenvolvimento e aperfeiçoamento do maçom.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* CBCS - Cavaleiro Benfeitor da Cidade Santa */}
+                  {/* MM - Mestre */}
                   <div className="rounded-lg bg-purple-50/50 p-6">
                     <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-purple-900">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white">
-                        III
+                        3°
                       </span>
-                      Armadura como Cavaleiro Benfeitor da Cidade Santa (CBCS)
+                      Exaltação a Mestre (MM)
                     </h4>
                     <div className="grid gap-6 md:grid-cols-2">
-                      <FormField label="Data de armadura CBCS">
+                      <FormField label="Data de exaltação MM">
                         <input
                           type="date"
-                          value={form.dataCBCS}
-                          onChange={(e) => update("dataCBCS")(e.target.value)}
+                          value={form.dataMM}
+                          onChange={(e) => update("dataMM")(e.target.value)}
                           className="input-field"
                         />
                       </FormField>
                       <div className="flex items-center rounded-lg bg-purple-100 px-4 py-3">
                         <p className="text-xs text-purple-800">
-                          <strong>CBCS:</strong> Terceira e última classe da Ordem Interior, conferida após período probatório como EN.
+                          <strong>MM:</strong> Terceiro grau da Maçonaria Simbólica, representa a plenitude do conhecimento maçônico.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MI - Mestre Instalado */}
+                  <div className="rounded-lg bg-amber-50/50 p-6">
+                    <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-amber-900">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white">
+                        MI
+                      </span>
+                      Instalação como Mestre Instalado (MI)
+                    </h4>
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <FormField label="Data de instalação MI">
+                        <input
+                          type="date"
+                          value={form.dataMI}
+                          onChange={(e) => update("dataMI")(e.target.value)}
+                          className="input-field"
+                        />
+                      </FormField>
+                      <div className="flex items-center rounded-lg bg-amber-100 px-4 py-3">
+                        <p className="text-xs text-amber-800">
+                          <strong>MI:</strong> Grau adicional conferido aos Mestres que assumiram ou assumirão cargos de direção na Loja.
                         </p>
                       </div>
                     </div>
@@ -1136,7 +1162,7 @@ export function NewMemberForm({ lojas }: { lojas: LojaOption[] }) {
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs text-slate-600">
-                      <strong>Observação:</strong> Estes campos são opcionais e específicos para membros que participam da Ordem Interior do Rito Escocês Retificado. Deixe em branco caso o membro não possua essas recepções.
+                      <strong>Observação:</strong> Estes campos registram a progressão do membro nos graus da Maçonaria Simbólica. Preencha conforme o histórico maçônico do membro.
                     </p>
                   </div>
                 </div>

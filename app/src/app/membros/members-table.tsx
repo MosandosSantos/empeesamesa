@@ -10,9 +10,10 @@ export type MemberRow = {
   nome: string;
   situacao: string;
   classe: string;
-  dataMESA: Date | null;
-  dataEN: Date | null;
-  dataCBCS: Date | null;
+  dataAP: Date | null;
+  dataCM: Date | null;
+  dataMM: Date | null;
+  dataMI: Date | null;
 };
 
 const PAGE_SIZE = 10;
@@ -20,7 +21,6 @@ const PAGE_SIZE = 10;
 export default function MembersTable({ members }: { members: MemberRow[] }) {
   const [busca, setBusca] = useState("");
   const [filtroSituacao, setFiltroSituacao] = useState<"Todos" | string>("Todos");
-  const [filtroClasse, setFiltroClasse] = useState<"Todas" | string>("Todas");
   const [pagina, setPagina] = useState(1);
   const toTitleCase = (name: string) =>
     name
@@ -35,10 +35,9 @@ export default function MembersTable({ members }: { members: MemberRow[] }) {
     return members.filter((m) => {
       const matchTexto = m.nome.toLowerCase().includes(texto);
       const matchSituacao = filtroSituacao === "Todos" ? true : m.situacao === filtroSituacao;
-      const matchClasse = filtroClasse === "Todas" ? true : m.classe === filtroClasse;
-      return matchTexto && matchSituacao && matchClasse;
+      return matchTexto && matchSituacao;
     });
-  }, [busca, filtroClasse, filtroSituacao, members]);
+  }, [busca, filtroSituacao, members]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / PAGE_SIZE));
   const paginaSegura = Math.min(pagina, totalPaginas);
@@ -117,19 +116,6 @@ export default function MembersTable({ members }: { members: MemberRow[] }) {
                 <option value="PROPOSTO">PROPOSTO</option>
                 <option value="ADORMECIDO">ADORMECIDO</option>
               </select>
-              <select
-                value={filtroClasse}
-                onChange={(e) => {
-                  setFiltroClasse(e.target.value);
-                  setPagina(1);
-                }}
-                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none sm:w-48"
-              >
-                <option value="Todas">Classe: todas</option>
-                <option value="MESA">MESA (Mestre de Santo Andre)</option>
-                <option value="EN">EN (Escudeiro Novico)</option>
-                <option value="CBCS">CBCS (Cavaleiro Benfeitor da Cidade Santa)</option>
-              </select>
             </div>
             <Link
               href="/membros/novo"
@@ -147,10 +133,11 @@ export default function MembersTable({ members }: { members: MemberRow[] }) {
               <tr>
                 <Th>Nome</Th>
                 <Th>Situação</Th>
-                <Th>Classe</Th>
-                <Th>Data MESA</Th>
-                <Th>Data EN</Th>
-                <Th>Data CBCS</Th>
+                <Th>Cargo</Th>
+                <Th>Data AP</Th>
+                <Th>Data CM</Th>
+                <Th>Data MM</Th>
+                <Th>Data MI</Th>
                 <Th className="text-right">Ações</Th>
               </tr>
             </thead>
@@ -164,11 +151,12 @@ export default function MembersTable({ members }: { members: MemberRow[] }) {
                     <StatusIndicator situacao={m.situacao} />
                   </Td>
                   <Td>
-                    <span className="font-semibold">{m.classe || "-"}</span>
+                    <span className="font-semibold">-</span>
                   </Td>
-                  <Td>{formatDate(m.dataMESA)}</Td>
-                  <Td>{formatDate(m.dataEN)}</Td>
-                  <Td>{formatDate(m.dataCBCS)}</Td>
+                  <Td>{formatDate(m.dataAP)}</Td>
+                  <Td>{formatDate(m.dataCM)}</Td>
+                  <Td>{formatDate(m.dataMM)}</Td>
+                  <Td>{formatDate(m.dataMI)}</Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link href={`/membros/${m.id}`} className="inline-flex">
@@ -193,7 +181,7 @@ export default function MembersTable({ members }: { members: MemberRow[] }) {
               ))}
               {membrosPagina.length === 0 && (
                 <tr>
-                  <Td colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <Td colSpan={8} className="py-8 text-center text-muted-foreground">
                     Nenhum membro encontrado com os filtros aplicados.
                   </Td>
                 </tr>
