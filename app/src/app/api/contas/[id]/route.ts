@@ -87,16 +87,25 @@ export async function PUT(
       );
     }
 
-    // If categoriaId is being updated, verify it exists and belongs to tenant
-    if (body.categoriaId) {
+    const nextTipo = body.tipo ?? existing.tipo;
+    const nextCategoriaId = body.categoriaId ?? existing.categoriaId;
+
+    if (body.categoriaId || body.tipo) {
       const categoria = await prisma.categoria.findUnique({
-        where: { id: body.categoriaId },
+        where: { id: nextCategoriaId },
       });
 
       if (!categoria || categoria.tenantId !== payload!.tenantId) {
         return NextResponse.json(
-          { error: "Categoria não encontrada" },
+          { error: "Categoria nao encontrada" },
           { status: 404 }
+        );
+      }
+
+      if (categoria.tipo !== nextTipo) {
+        return NextResponse.json(
+          { error: "Categoria nao compativel com o tipo do lancamento" },
+          { status: 400 }
         );
       }
     }

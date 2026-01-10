@@ -3,6 +3,7 @@ import { verifyAuth, getUserFromPayload } from "@/lib/api-auth";
 import { markPayment } from "@/lib/payments/services";
 import { markPaymentSchema } from "@/lib/validations/payments";
 import { prisma } from "@/lib/prisma";
+import { canAccessFinance, isLojaAdmin, isTesouraria } from "@/lib/roles";
 
 /**
  * POST /api/payments/mark
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   // Verificar se o período e o membro pertencem ao tenant correto
   const period = await prisma.paymentPeriod.findUnique({
     where: { id: input.periodId },
-    select: { tenantId: true },
+    select: { tenantId: true, lojaId: true },
   });
 
   if (!period) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   const member = await prisma.member.findUnique({
     where: { id: input.memberId },
-    select: { tenantId: true },
+    select: { tenantId: true, lojaId: true },
   });
 
   if (!member) {

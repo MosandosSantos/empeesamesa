@@ -1,13 +1,17 @@
-'use client';
+﻿'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, Percent } from 'lucide-react';
 
 interface KPISummary {
-  previsto: number;
+  monthlyForecast: number;
+  annualForecast: number;
   recebido: number;
   emAberto: number;
   adimplencia: number;
+  monthlyOpen: number;
+  annualOpen: number;
+  monthlyDelinquencyPercent: number;
 }
 
 interface KPICardsProps {
@@ -47,8 +51,10 @@ export function KPICards({ summary }: KPICardsProps) {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(summary.previsto)}</div>
-          <p className="text-xs text-muted-foreground mt-1">Total esperado no período</p>
+          <div className="text-2xl font-bold">{formatCurrency(summary.monthlyForecast)}</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Previsto mensal (base anual em 12x): {formatCurrency(summary.annualForecast)}
+          </p>
         </CardContent>
       </Card>
 
@@ -70,15 +76,34 @@ export function KPICards({ summary }: KPICardsProps) {
           <CardTitle className="text-sm font-medium">Em Aberto</CardTitle>
           <TrendingDown className="h-4 w-4 text-red-600" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-600">{formatCurrency(summary.emAberto)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {summary.emAberto > 0 ? 'Pendente de recebimento' : 'Nenhuma pendência'}
-          </p>
-        </CardContent>
+      <CardContent>
+        <div className="text-2xl font-bold text-red-600">{formatCurrency(summary.monthlyOpen)}</div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Diferença mensal (previsto - pago)
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Diferença anual: {formatCurrency(summary.annualOpen)}
+        </p>
+
+        {summary.monthlyDelinquencyRatio != null ? (
+  <p className="text-xs text-muted-foreground mt-1">
+    Inadimplência (pagos / não pagos):{" "}
+    {summary.monthlyDelinquencyRatio.toFixed(2)}x
+  </p>
+) : (
+  <p className="text-xs text-muted-foreground mt-1">
+    Inadimplência (pagos / não pagos): todos pagaram
+  </p>
+)}
+
+<p className="text-xs text-muted-foreground mt-1">
+  {summary.emAberto > 0 ? "Pendente de recebimento" : "Nenhuma pendência"}
+</p>
+
+      </CardContent>
       </Card>
 
-      {/* Card 4: Adimplência */}
+      {/* Card 4: AdimplÃªncia */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Adimplência</CardTitle>
@@ -96,3 +121,4 @@ export function KPICards({ summary }: KPICardsProps) {
     </div>
   );
 }
+

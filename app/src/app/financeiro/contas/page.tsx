@@ -23,6 +23,8 @@ import { StatusBadge } from "@/components/financeiro/status-badge";
 import { CurrencyDisplay } from "@/components/financeiro/currency-display";
 import { Plus, Eye, Pencil, Trash2, Filter } from "lucide-react";
 import { StatusLancamento, TipoLancamento } from "@/types/financeiro";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 interface Categoria {
   id: string;
@@ -47,6 +49,11 @@ interface Lancamento {
 }
 
 export default function ContasPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,13 +66,27 @@ export default function ContasPage() {
   });
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchCategorias();
     fetchLancamentos();
-  }, []);
+  }, [accessError, accessLoading]);
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchLancamentos();
-  }, [filters]);
+  }, [accessError, accessLoading, filters]);
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   const fetchCategorias = async () => {
     try {

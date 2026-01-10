@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/api-auth';
+import { authenticateRequest, getUserFromPayload } from '@/lib/api-auth';
 import prisma from '@/lib/prisma';
 import { createUserSchema } from '@/lib/validations/user';
 import { createInviteToken, INVITE_TOKEN_EXPIRY_HOURS } from '@/lib/invite-token';
 import { sendEmail, createInviteEmailTemplate } from '@/lib/email';
+import { isSaasAdmin } from '@/lib/roles';
 
 /**
  * GET /api/users
@@ -16,6 +17,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const user = await getUserFromPayload(auth);
+    if (!user) {
+      return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+    }
+
     const users = await prisma.user.findMany({
       where: {
         tenantId: auth.tenantId,

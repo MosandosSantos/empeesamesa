@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
+import { canAccessFinance, isLojaAdmin, isTesouraria } from '@/lib/roles';
 import { getPaymentGrid } from '@/lib/payments/payment-aggregator';
 
 export async function GET(req: NextRequest) {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   // IMPORTANTE: JWTPayload não tem role, precisa buscar do banco
   const user = await prisma.user.findUnique({
     where: { id: payload!.userId },
-    select: { role: true },
+    select: { role: true, lojaId: true },
   });
 
   if (!user) {
@@ -47,6 +48,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
+
+  if (!canAccessFinance(user.role) && user.role !== 'MEMBER') {
+    return NextResponse.json(
+      { error: 'Voce nao tem permissao para acessar pagamentos' },
+      { status: 403 }
+    );
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isTesouraria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    return NextResponse.json(
+      { error: 'Usuario sem loja vinculada' },
+      { status: 403 }
+    );
+  }
   let onlyMemberId: string | undefined;
 
   // Se usuário é MEMBER, buscar seu memberProfile e restringir
@@ -76,7 +92,7 @@ export async function GET(req: NextRequest) {
       tenantId: payload!.tenantId,
       type,
       year,
-      lojaId,
+      lojaId: needsLojaRestriction ? user.lojaId : lojaId,
       onlyMemberId,
     });
 

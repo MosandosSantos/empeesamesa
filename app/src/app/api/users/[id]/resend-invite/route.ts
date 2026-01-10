@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/api-auth';
+import { authenticateRequest, getUserFromPayload } from '@/lib/api-auth';
 import prisma from '@/lib/prisma';
+import { isSaasAdmin } from '@/lib/roles';
 import {
   createInviteToken,
   invalidateUserTokens,
@@ -23,8 +24,13 @@ export async function POST(req: NextRequest, props: RouteParams) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
 
-  // Apenas SYS_ADMIN pode reenviar convites
-  if (auth.role !== 'SYS_ADMIN') {
+  const currentUser = await getUserFromPayload(auth);
+  if (!currentUser) {
+    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  }
+
+  // Apenas administradores do sistema podem reenviar convites
+  if (!isSaasAdmin(currentUser.role)) {
     return NextResponse.json(
       { error: 'Apenas administradores do sistema podem reenviar convites' },
       { status: 403 }

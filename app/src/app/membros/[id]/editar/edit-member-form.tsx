@@ -37,6 +37,12 @@ const situacaoOptions = [
   { value: "ADORMECIDO", label: "Adormecido" },
 ];
 
+const condicaoMensalidadeOptions = [
+  { value: "REGULAR", label: "Regular" },
+  { value: "FILIADO", label: "Filiado" },
+  { value: "REMIDO", label: "Remido" },
+];
+
 const classeOptions = [
   { value: "AP", label: "AP (Aprendiz)" },
   { value: "CM", label: "CM (Companheiro)" },
@@ -92,6 +98,7 @@ export default function EditMemberForm({ member }: { member: Member }) {
     rito: member.rito || "RER",
     dataEntradaLojaAtual: formatDateForInput(member.dataEntradaLojaAtual),
     situacao: member.situacao || "ATIVO",
+    condicaoMensalidade: member.condicaoMensalidade || "REGULAR",
     class: member.class || "AP",
     dataAP: formatDateForInput(member.dataAP),
     dataCM: formatDateForInput(member.dataCM),
@@ -134,6 +141,7 @@ export default function EditMemberForm({ member }: { member: Member }) {
           dataPassagem: form.dataPassagem || null,
           dataElevacao: form.dataElevacao || null,
           dataInstalacao: form.dataInstalacao || null,
+          condicaoMensalidade: form.condicaoMensalidade || "REGULAR",
         }),
       });
 
@@ -331,7 +339,7 @@ export default function EditMemberForm({ member }: { member: Member }) {
           {/* Contato e Endereço */}
           <SectionCard title="Contato e Endereço" icon={MapPin}>
             <div className="grid gap-6 md:grid-cols-3">
-              <FormField label="Email" required>
+              <FormField label="E-mail" required>
                 <input
                   type="email"
                   value={form.email}
@@ -453,19 +461,32 @@ export default function EditMemberForm({ member }: { member: Member }) {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-              <FormField label="Situação">
-                <select
-                  value={form.situacao}
-                  onChange={(e) => update("situacao")(e.target.value)}
-                  className="input-field"
-                >
-                  {situacaoOptions.map((sit) => (
-                    <option key={sit.value} value={sit.value}>
-                      {sit.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+            <FormField label="Situação">
+              <select
+                value={form.situacao}
+                onChange={(e) => update("situacao")(e.target.value)}
+                className="input-field"
+              >
+                {situacaoOptions.map((sit) => (
+                  <option key={sit.value} value={sit.value}>
+                    {sit.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Condição da Mensalidade">
+              <select
+                value={form.condicaoMensalidade}
+                onChange={(e) => update("condicaoMensalidade")(e.target.value)}
+                className="input-field"
+              >
+                {condicaoMensalidadeOptions.map((cond) => (
+                  <option key={cond.value} value={cond.value}>
+                    {cond.label}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
               <FormField label="Data de entrada na loja">
                 <input
@@ -701,3 +722,4 @@ function FormField({
     </label>
   );
 }
+

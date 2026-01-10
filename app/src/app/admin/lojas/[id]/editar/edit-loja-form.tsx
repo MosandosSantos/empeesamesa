@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Save, Store, Phone, MapPin, FileText } from "lucide-react";
-import type { Loja, Potencia, Rito } from "@prisma/client";
+import type { Loja } from "@prisma/client";
 
 const ufOptions = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
@@ -60,6 +60,7 @@ export default function EditLojaForm({
 
   const [form, setForm] = useState({
     lojaMX: loja.lojaMX,
+    shortName: loja.shortName || "",
     numero: loja.numero?.toString() || "",
     potenciaId: loja.potenciaId,
     ritoId: loja.ritoId || "",
@@ -129,7 +130,7 @@ export default function EditLojaForm({
       const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.message || data?.error) {
-        setCnpjError(data?.message || "CNPJ nao encontrado na base publica.");
+        setCnpjError(data?.message || "CNPJ n\u00e3o encontrado na base p\u00fablica.");
         return;
       }
       setCnpjError("");
@@ -143,7 +144,7 @@ export default function EditLojaForm({
         update("dataAbertura")(String(data.data_inicio_atividade).slice(0, 10));
       }
     } catch (_error) {
-      setCnpjError("Nao foi possivel validar o CNPJ agora.");
+      setCnpjError("N\u00e3o foi poss\u00edvel validar o CNPJ agora.");
     }
   };
 
@@ -191,8 +192,14 @@ export default function EditLojaForm({
     setSubmitting(true);
     setError("");
 
+    if (!form.shortName.trim()) {
+      setError("Nome curto é obrigatório");
+      setSubmitting(false);
+      return;
+    }
+
     if (!form.contatoNome.trim()) {
-      setError("Nome do contato e obrigatorio");
+      setError("Nome do contato \u00e9 obrigat\u00f3rio");
       setSubmitting(false);
       return;
     }
@@ -201,15 +208,24 @@ export default function EditLojaForm({
       const response = await fetch(`/api/lojas/${loja.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          numero: form.numero ? parseInt(form.numero) : null,
-          dataFundacao: form.dataFundacao || null,
-          dataAbertura: form.dataAbertura || null,
-          mensalidadeVencimentoDia: form.mensalidadeVencimentoDia ? parseInt(form.mensalidadeVencimentoDia) : null,
-          ritoId: form.ritoId || null,
-          valorMensalidade: parseFloat(form.valorMensalidade),
-        }),
+          body: JSON.stringify({
+            ...form,
+            numero: form.numero ? parseInt(form.numero) : null,
+            dataFundacao: form.dataFundacao || null,
+            dataAbertura: form.dataAbertura || null,
+            mensalidadeVencimentoDia: form.mensalidadeVencimentoDia ? parseInt(form.mensalidadeVencimentoDia) : null,
+            ritoId: form.ritoId || null,
+            valorMensalidade: parseFloat(form.valorMensalidade),
+            mensalidadeRegular: form.mensalidadeRegular
+              ? parseFloat(form.mensalidadeRegular)
+              : undefined,
+            mensalidadeFiliado: form.mensalidadeFiliado
+              ? parseFloat(form.mensalidadeFiliado)
+              : undefined,
+            mensalidadeRemido: form.mensalidadeRemido
+              ? parseFloat(form.mensalidadeRemido)
+              : undefined,
+          }),
       });
 
       const data = await response.json();
@@ -223,8 +239,9 @@ export default function EditLojaForm({
         router.push("/admin/lojas");
         router.refresh();
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || "Erro ao atualizar loja");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar loja";
+      setError(message);
       setSubmitting(false);
     }
   };
@@ -281,6 +298,15 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
+            <Field label="Nome curto (Short name)" required>
+              <input
+                type="text"
+                value={form.shortName}
+                onChange={(e) => update("shortName")(e.target.value)}
+                required
+                className="input-field"
+              />
+            </Field>
             <Field label="Número Ritualístico">
               <input
                 type="number"
@@ -290,14 +316,14 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="Potência" required>
+            <Field label="Prefeitura" required>
               <select
                 value={form.potenciaId}
                 onChange={(e) => update("potenciaId")(e.target.value)}
                 required
                 className="input-field"
               >
-                <option value="">Selecione a potência</option>
+                <option value="">Selecione a prefeitura</option>
                 {potencias.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.sigla ? `${p.sigla} - ` : ""}
@@ -418,6 +444,36 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
+            <Field label="Mensalidade regular (R$)">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.mensalidadeRegular}
+                onChange={(e) => update("mensalidadeRegular")(e.target.value)}
+                className="input-field"
+              />
+            </Field>
+            <Field label="Mensalidade filiado (R$)">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.mensalidadeFiliado}
+                onChange={(e) => update("mensalidadeFiliado")(e.target.value)}
+                className="input-field"
+              />
+            </Field>
+            <Field label="Mensalidade remido (R$)">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.mensalidadeRemido}
+                onChange={(e) => update("mensalidadeRemido")(e.target.value)}
+                className="input-field"
+              />
+            </Field>
             <div className="flex items-center gap-2 pt-6">
               <input
                 id="mensalidadeAtiva"
@@ -526,7 +582,7 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="Email">
+            <Field label="E-mail">
               <input
                 type="email"
                 value={form.email}
@@ -542,7 +598,7 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="Website">
+            <Field label="Site">
               <input
                 type="url"
                 value={form.website}
@@ -555,7 +611,7 @@ export default function EditLojaForm({
 
         {/* Endereço */}
         
-        <Section title="Endere?o" icon={<MapPin size={18} />}>
+        <Section title="Endere\u00e7o" icon={<MapPin size={18} />}>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="CEP">
               <input
@@ -577,7 +633,7 @@ export default function EditLojaForm({
                 className="input-field"
               />
             </Field>
-            <Field label="N?mero">
+            <Field label="N\u00famero">
               <input
                 type="text"
                 value={form.enderecoNumero}
@@ -710,3 +766,4 @@ function Field({
     </label>
   );
 }
+

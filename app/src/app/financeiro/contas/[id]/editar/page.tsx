@@ -17,6 +17,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
 import { TipoLancamento, StatusLancamento, FormaPagamento } from "@/types/financeiro";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 interface Categoria {
   id: string;
@@ -38,6 +40,11 @@ interface Lancamento {
 }
 
 export default function EditarContaPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -59,16 +66,33 @@ export default function EditarContaPage() {
   });
 
   useEffect(() => {
-    fetchCategorias();
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchLancamento();
-  }, [params.id]);
+  }, [accessError, accessLoading, params.id]);
+
+  useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
+    fetchCategorias();
+  }, [accessError, accessLoading, formData.tipo]);
 
   const fetchCategorias = async () => {
     try {
-      const response = await fetch("/api/categorias");
+      const params = new URLSearchParams({ tipo: formData.tipo });
+      const response = await fetch(`/api/categorias?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setCategorias(data.categorias);
+        setFormData((prev) => {
+          const categoriaIds = data.categorias.map((cat: Categoria) => cat.id);
+          if (prev.categoriaId && !categoriaIds.includes(prev.categoriaId)) {
+            return { ...prev, categoriaId: "" };
+          }
+          return prev;
+        });
       }
     } catch (error) {
       console.error("Erro ao buscar categorias:", error);
@@ -156,7 +180,12 @@ export default function EditarContaPage() {
   };
 
   const updateField = (field: string, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      if (field === "tipo") {
+        return { ...prev, tipo: value as TipoLancamento, categoriaId: "" };
+      }
+      return { ...prev, [field]: value };
+    });
     // Clear error when field is updated
     if (errors[field]) {
       setErrors((prev) => {
@@ -166,6 +195,14 @@ export default function EditarContaPage() {
       });
     }
   };
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   if (loading) {
     return (

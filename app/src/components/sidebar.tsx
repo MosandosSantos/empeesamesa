@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -11,17 +10,14 @@ import {
   ClipboardCheck,
   DollarSign,
   TrendingUp,
-  BookOpen,
   Package,
-  HelpCircle,
-  Mail,
   Building2,
   Landmark,
   ChevronLeft,
   ChevronRight,
-  Lock,
   ChevronDown,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,15 +26,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  canAccessFinance,
+  canAccessPresence,
+  isLojaAdmin,
+  isSecretaria,
+  isTesouraria,
+  isSaasAdmin,
+} from "@/lib/roles";
 
-const navigationItems = [
+type NavigationSubItem = {
+  label: string;
+  href: string;
+};
+
+type NavigationItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  subItems?: NavigationSubItem[];
+};
+
+const navigationItems: NavigationItem[] = [
   {
     label: "Dashboard",
     href: "/",
     icon: Home,
   },
   {
-    label: "Potencias",
+    label: "Prefeituras",
     href: "/potencias",
     icon: Landmark,
   },
@@ -100,6 +116,47 @@ interface SidebarProps {
 export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]);
+  const [role, setRole] = React.useState<string | null>(null);
+  const [tenantName, setTenantName] = React.useState<string>("");
+
+  React.useEffect(() => {
+    let mounted = true;
+    const loadRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (mounted) {
+          setRole(data?.user?.role ?? null);
+          setTenantName(data?.user?.tenantName ?? "");
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    loadRole();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const visibleItems = React.useMemo(() => {
+    return navigationItems.filter((item) => {
+      if (!role) return true;
+      if (item.href === "/presenca" && !canAccessPresence(role)) return false;
+      if ((item.href === "/pagamentos" || item.href === "/financeiro") && !canAccessFinance(role)) {
+        return false;
+      }
+      if (
+        item.href === "/potencias" &&
+        (isLojaAdmin(role) || isTesouraria(role) || isSecretaria(role))
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [role]);
 
   const toggleExpand = (itemLabel: string) => {
     setExpandedItems((prev) =>
@@ -108,6 +165,15 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
         : [...prev, itemLabel]
     );
   };
+
+  const tenantLabel = isSaasAdmin(role) ? "EsferaDataSci" : tenantName?.trim() || "SAL GOISC";
+  const tenantShort =
+    tenantLabel
+      .split(" ")
+      .filter((word) => word.length > 0)
+      .map((word) => word[0].toUpperCase())
+      .join("")
+      .slice(0, 2) || "SG";
 
   return (
     <aside
@@ -120,23 +186,32 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
       )}
     >
       {/* Logo/Header */}
-      <div className={cn(
-        "flex h-16 items-center border-b border-sidebar-border transition-all duration-300",
-        isCollapsed ? "justify-center px-2" : "justify-between px-6"
-      )}>
-        <Link href="/" className="flex items-center gap-2" onClick={onClose}>
-          <Image
-            src="/img/logo.svg"
-            alt="SAL GOISC"
-            width={36}
-            height={36}
-            className="h-9 w-9 flex-shrink-0"
-            priority
-          />
-          {!isCollapsed && (
-            <span className="text-base font-semibold font-[var(--font-brand)]">
-              <span className="text-rer-green">SAL GOISC</span>
+      <div
+        className={cn(
+          "flex h-16 items-center border-b border-sidebar-border transition-all duration-300",
+          isCollapsed ? "justify-center px-2" : "justify-between px-6"
+        )}
+      >
+        <Link href="/" className="flex items-center" onClick={onClose}>
+          {isCollapsed ? (
+            <span
+              className="text-sm font-semibold uppercase tracking-[0.3em] text-sidebar-foreground"
+              title={tenantLabel}
+            >
+              {tenantShort}
             </span>
+          ) : (
+            <div className="flex flex-col">
+              <span className="text-[0.55rem] uppercase tracking-[0.3em] text-sidebar-foreground/70">
+                Loja
+              </span>
+              <span
+                className="max-w-[130px] truncate text-sm font-semibold text-sidebar-foreground"
+                title={tenantLabel}
+              >
+                {tenantLabel}
+              </span>
+            </div>
           )}
         </Link>
 
@@ -167,12 +242,12 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
       )}>
         <TooltipProvider delayDuration={0}>
           <ul className="space-y-1">
-            {navigationItems.map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              const hasSubItems = 'subItems' in item && item.subItems && item.subItems.length > 0;
+              const hasSubItems = Boolean(item.subItems?.length);
               const isExpanded = expandedItems.includes(item.label);
-              const isSubItemActive = hasSubItems && item.subItems?.some((sub: any) => pathname === sub.href);
+              const isSubItemActive = hasSubItems && item.subItems?.some((sub) => pathname === sub.href);
 
               // Se tem subitens e não está colapsado, mostra botão expansível
               if (hasSubItems && !isCollapsed) {
@@ -203,7 +278,7 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
                       </button>
                       {isExpanded && (
                         <ul className="ml-9 mt-1 space-y-1">
-                          {item.subItems?.map((subItem: any) => (
+                          {item.subItems?.map((subItem) => (
                             <li key={subItem.href}>
                               <Link
                                 href={subItem.href}
@@ -283,3 +358,5 @@ export function Sidebar({ isOpen = true, onClose, isCollapsed = false, onToggleC
     </aside>
   );
 }
+
+

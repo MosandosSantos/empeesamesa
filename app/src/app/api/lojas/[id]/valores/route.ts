@@ -13,14 +13,17 @@ export async function GET(
 
     const { id } = await params;
 
-    const loja = await prisma.loja.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        valorMensalidade: true,
-        valorAnuidade: true,
-      },
-    });
+  const loja = await prisma.loja.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      valorMensalidade: true,
+      valorAnuidade: true,
+      mensalidadeRegular: true,
+      mensalidadeFiliado: true,
+      mensalidadeRemido: true,
+    },
+  });
 
     if (!loja) {
       return NextResponse.json({ error: "Loja nao encontrada" }, { status: 404 });
@@ -29,6 +32,18 @@ export async function GET(
     return NextResponse.json({
       valorMensalidade: loja.valorMensalidade?.toString() || "150.00",
       valorAnuidade: loja.valorAnuidade?.toString() || "500.00",
+      mensalidadeRegular:
+        loja.mensalidadeRegular?.toString() ||
+        loja.valorMensalidade?.toString() ||
+        "150.00",
+      mensalidadeFiliado:
+        loja.mensalidadeFiliado?.toString() ||
+        loja.valorMensalidade?.toString() ||
+        "150.00",
+      mensalidadeRemido:
+        loja.mensalidadeRemido?.toString() ||
+        loja.valorMensalidade?.toString() ||
+        "150.00",
     });
   } catch (error) {
     console.error("GET /api/lojas/[id]/valores error:", error);

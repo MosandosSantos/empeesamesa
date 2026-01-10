@@ -19,6 +19,28 @@ Sprint 10-11: E-mails + Boletos + QA + Deploy (4 semanas)
 
 ---
 
+## Sprint Amanhã — Membros e Presenca
+
+**Duracao**: 1 dia  
+**Status**: Planejado  
+**Data**: amanha
+
+### Objetivos
+- Consolidar fluxo de membros (cadastro, listagem, filtros e vinculacao a loja).
+- Implementar base de presenca (sessao e marcacao).
+
+### Tarefas
+- [ ] SA.1 Ajustar listagem de membros (filtros por loja/tenant, totalizadores).
+- [ ] SA.2 Revisar formulario de membros (validacoes e campos obrigatorios).
+- [ ] SA.3 Garantir vinculacao membro -> loja -> tenant.
+- [ ] SA.4 Presenca: criar sessao e registrar presencas.
+- [ ] SA.5 Relatorio simples por sessao (presentes/ausentes).
+
+### Entregavel
+Membros estavel + presenca basica funcional.
+
+---
+
 ## Sprint 0 — Fundação
 
 **Duração**: 1 semana
@@ -31,12 +53,12 @@ Preparar base técnica do projeto para desenvolvimento dos módulos.
 
 - [x] S0.1 Criar projeto Next.js (TypeScript) + Tailwind
 - [x] S0.2 Integrar shadcn/ui (instalação base)
-- [ ] S0.3 Escolher e configurar ORM (Prisma ou Drizzle)
-- [ ] S0.4 Criar modelos iniciais: Tenant, User
-- [ ] S0.5 Configurar SQLite + migrations
-- [ ] S0.6 Criar seed (tenant default + usuário admin)
-- [ ] S0.7 Implementar AppShell (Sidebar + Topbar)
-- [ ] S0.8 Definir tokens de cor (RER: verde, ouro, vermelho)
+- [x] S0.3 Escolher e configurar ORM (Prisma ou Drizzle)
+- [x] S0.4 Criar modelos iniciais: Tenant, User
+- [x] S0.5 Configurar SQLite + migrations
+- [x] S0.6 Criar seed (tenant default + usuário admin)
+- [x] S0.7 Implementar AppShell (Sidebar + Topbar)
+- [x] S0.8 Definir tokens de cor (RER: verde, ouro, vermelho)
 
 ### Entregável
 Projeto base funcionando com AppShell e autenticação mockada.
@@ -53,17 +75,17 @@ Criar tela central do sistema com KPIs e gráficos mockados.
 
 ### Tarefas
 
-- [ ] S1.1 Criar rota `/dashboard`
-- [ ] S1.2 Implementar layout com AppShell
-- [ ] S1.3 Criar componentes de KPI cards
+- [x] S1.1 Criar rota `/dashboard`
+- [x] S1.2 Implementar layout com AppShell
+- [x] S1.3 Criar componentes de KPI cards
   - Membros ativos
   - % Adimplência
   - Receita/Despesa do mês
   - Saldo
-- [ ] S1.4 Implementar gráficos mockados
+- [x] S1.4 Implementar gráficos mockados
   - Receitas vs Despesas (linha)
   - Adimplentes vs Inadimplentes (donut)
-- [ ] S1.5 Implementar responsividade (drawer mobile)
+- [x] S1.5 Implementar responsividade (drawer mobile)
 - [ ] S1.6 Adicionar filtro de período (mês/trimestre/ano)
 
 ### Entregável
@@ -81,17 +103,16 @@ Implementar autenticação segura com JWT em cookies.
 
 ### Tarefas
 
-- [ ] S2.1 Criar model User (email, password_hash, role)
-- [ ] S2.2 Implementar hash de senha (bcrypt)
-- [ ] S2.3 Criar API route `/api/auth/login`
+- [x] S2.2 Implementar hash de senha (bcrypt)
+- [x] S2.3 Criar API route `/api/auth/login`
   - Validar credenciais
   - Gerar JWT (validade: 7 dias)
   - Armazenar em cookie httpOnly
-- [ ] S2.4 Criar API route `/api/auth/logout`
-- [ ] S2.5 Implementar middleware de proteção de rotas
-- [ ] S2.6 Criar tela `/login`
-- [ ] S2.7 Adicionar rate limiting no login
-- [ ] S2.8 Testar fluxo completo (login → dashboard → logout)
+- [x] S2.4 Criar API route `/api/auth/logout`
+- [x] S2.5 Implementar middleware de proteção de rotas
+- [x] S2.6 Criar tela `/login`
+- [x] S2.7 Adicionar rate limiting no login
+- [x] S2.8 Testar fluxo completo (login → dashboard → logout)
 
 ### Entregável
 Autenticação funcional com login/logout e proteção de rotas.
@@ -108,7 +129,7 @@ Implementar gestão completa de membros.
 
 ### Tarefas
 
-- [ ] S3.1 Criar model Member (tenant_id, name, email, status, grade)
+- [x] S3.1 Criar model Member (tenant_id, name, email, status, grade)
 - [ ] S3.2 Criar API routes CRUD (`/api/members`)
 - [ ] S3.3 Criar página de listagem (`/membros`)
   - Tabela com busca

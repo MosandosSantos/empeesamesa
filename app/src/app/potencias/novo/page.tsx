@@ -20,15 +20,15 @@ async function createPotencia(_: FormState, formData: FormData): Promise<FormSta
   "use server";
 
   const user = await getCurrentUser();
-  if (!user) return { error: "Nao autorizado." };
+  if (!user) return { error: "N\u00e3o autorizado." };
   if (user.role !== "ADMIN_SAAS" && user.role !== "SYS_ADMIN") {
-    return { error: "Sem permissao para cadastrar potencia." };
+    return { error: "Sem permiss\u00e3o para cadastrar prefeitura." };
   }
   const tenantId = user.tenantId;
 
   const nome = formData.get("nome")?.toString().trim();
   if (!nome) {
-    return { error: "O nome da potencia e obrigatorio." };
+    return { error: "O nome da prefeitura \u00e9 obrigat\u00f3rio." };
   }
 
   await prisma.potencia.create({
@@ -67,14 +67,14 @@ export default async function NovaPotenciaPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Cadastro</p>
-          <h1 className="text-3xl font-bold tracking-tight text-br-deep">Nova potencia</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-br-deep">Nova prefeitura</h1>
           <p className="text-sm text-muted-foreground">
-            Informe os dados essenciais da potencia.
+            Informe os dados essenciais da prefeitura.
           </p>
         </div>
       </div>
 
-      <PotenciaForm action={createPotencia} submitLabel="Cadastrar potencia" cancelHref="/potencias" />
+      <PotenciaForm action={createPotencia} submitLabel="Cadastrar prefeitura" cancelHref="/potencias" />
     </div>
   );
 }

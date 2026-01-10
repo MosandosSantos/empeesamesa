@@ -133,9 +133,6 @@ async function main() {
       return {
         tenantId: tenant.id,
         lojaId: loja.id,
-        lojaAtualNome: loja.lojaMX ?? "Loja Padrao",
-        lojaAtualNumero: loja.numero?.toString() ?? "1",
-        dataEntradaLojaAtual: dataAdmissao,
         rito: "RER",
 
         dataAdmissao,
@@ -147,7 +144,6 @@ async function main() {
         pai: "Pai Desconhecido",
         mae: "Mae Desconhecida",
         naturalCidade: enderecoCidade,
-        naturalUf: estado,
         nacionalidade: "Brasileira",
         estadoCivil: randomFrom(ESTADOS_CIVIS),
 

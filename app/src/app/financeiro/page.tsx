@@ -18,6 +18,8 @@ import { CategoryPieChart } from "@/components/financeiro/category-pie-chart";
 import { CurrencyDisplay } from "@/components/financeiro/currency-display";
 import { StatusBadge } from "@/components/financeiro/status-badge";
 import { Plus, TrendingUp, TrendingDown, Wallet, DollarSign, Calendar } from "lucide-react";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 import { TipoLancamento } from "@/types/financeiro";
 
 interface DashboardKPIs {
@@ -66,6 +68,11 @@ interface LancamentoResumo {
 const PAGE_SIZE = 10;
 
 export default function FinanceiroPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [movements, setMovements] = useState<LancamentoResumo[]>([]);
@@ -79,14 +86,20 @@ export default function FinanceiroPage() {
   });
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchDashboardData();
     setMovementsPage(1);
     fetchMovements();
-  }, [dateRange]);
+  }, [accessError, accessLoading, dateRange]);
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchMovements();
-  }, [movementsPage]);
+  }, [accessError, accessLoading, movementsPage]);
 
   const fetchDashboardData = async () => {
     try {
@@ -300,6 +313,14 @@ export default function FinanceiroPage() {
     { month: `${now.getFullYear()}-11`, receitas: 2050, despesas: 1420 },
     { month: `${now.getFullYear()}-12`, receitas: 1980, despesas: 1500 },
   ];
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   if (loading || !data) {
     return (

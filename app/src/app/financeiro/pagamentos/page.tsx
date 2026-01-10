@@ -17,10 +17,17 @@ import { PaymentTableDesktop } from '@/components/pagamentos/payment-table-deskt
 import { PaymentCardsMobile } from '@/components/pagamentos/payment-cards-mobile';
 import { PaymentMatrixChart } from '@/components/pagamentos/payment-matrix-chart';
 import type { PaymentTableData } from '@/types/payment-table';
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 type TabType = 'MONTHLY' | 'ANNUAL' | 'EVENTOS';
 
 export default function PagamentosPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const [activeTab, setActiveTab] = useState<TabType>('MONTHLY');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
@@ -30,16 +37,22 @@ export default function PagamentosPage() {
 
   // Detect mobile on mount
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [accessError, accessLoading]);
 
   // Fetch data when tab changes
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     if (activeTab === 'EVENTOS') {
       setData(null);
       setLoading(false);
@@ -62,7 +75,7 @@ export default function PagamentosPage() {
     };
 
     fetchData();
-  }, [activeTab]);
+  }, [accessError, accessLoading, activeTab]);
 
   // Filter data based on search and status
   const filteredData = data
@@ -152,6 +165,14 @@ export default function PagamentosPage() {
 
     fetchData();
   };
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

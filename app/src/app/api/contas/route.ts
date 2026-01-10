@@ -120,8 +120,14 @@ export async function POST(request: NextRequest) {
 
     if (!categoria || categoria.tenantId !== payload!.tenantId) {
       return NextResponse.json(
-        { error: "Categoria não encontrada" },
+        { error: "Categoria nao encontrada" },
         { status: 404 }
+      );
+    }
+    if (categoria.tipo !== body.tipo) {
+      return NextResponse.json(
+        { error: "Categoria nao compativel com o tipo do lancamento" },
+        { status: 400 }
       );
     }
 

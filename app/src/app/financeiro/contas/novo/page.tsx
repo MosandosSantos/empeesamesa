@@ -17,6 +17,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
 import { TipoLancamento, StatusLancamento, FormaPagamento } from "@/types/financeiro";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 interface Categoria {
   id: string;
@@ -24,6 +26,11 @@ interface Categoria {
 }
 
 export default function NovaContaPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingCategorias, setLoadingCategorias] = useState(true);
@@ -45,15 +52,27 @@ export default function NovaContaPage() {
   });
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchCategorias();
-  }, []);
+  }, [accessError, accessLoading, formData.tipo]);
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   const fetchCategorias = async () => {
     setLoadingCategorias(true);
     setCategoriasError("");
     try {
       console.log("[Frontend] Buscando categorias...");
-      const response = await fetch("/api/categorias");
+      const params = new URLSearchParams({ tipo: formData.tipo });
+      const response = await fetch(`/api/categorias?${params.toString()}`);
       console.log("[Frontend] Response status:", response.status);
 
       if (response.ok) {
@@ -64,6 +83,13 @@ export default function NovaContaPage() {
 
         if (data.categorias && Array.isArray(data.categorias)) {
           setCategorias(data.categorias);
+          setFormData((prev) => {
+            const categoriaIds = data.categorias.map((cat: Categoria) => cat.id);
+            if (prev.categoriaId && !categoriaIds.includes(prev.categoriaId)) {
+              return { ...prev, categoriaId: "" };
+            }
+            return prev;
+          });
           console.log("[Frontend] Estado atualizado com", data.categorias.length, "categorias");
         } else {
           console.error("[Frontend] Formato de dados inválido:", data);
@@ -135,7 +161,12 @@ export default function NovaContaPage() {
   };
 
   const updateField = (field: string, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      if (field === "tipo") {
+        return { ...prev, tipo: value as TipoLancamento, categoriaId: "" };
+      }
+      return { ...prev, [field]: value };
+    });
     // Clear error when field is updated
     if (errors[field]) {
       setErrors((prev) => {

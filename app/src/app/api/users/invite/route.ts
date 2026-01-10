@@ -17,8 +17,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Apenas SYS_ADMIN e LODGE_ADMIN podem reenviar convites
-    if (auth.role !== "SYS_ADMIN" && auth.role !== "LODGE_ADMIN") {
+    const currentUser = await getUserFromPayload(auth);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+    }
+
+    // Apenas administradores do sistema podem reenviar convites
+    if (!isSaasAdmin(currentUser.role)) {
       return NextResponse.json(
         { error: "Sem permissão para reenviar convites" },
         { status: 403 }

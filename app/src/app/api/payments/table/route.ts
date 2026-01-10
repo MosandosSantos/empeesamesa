@@ -3,6 +3,7 @@ import { verifyAuth, getUserFromPayload } from "@/lib/api-auth";
 import { getPaymentsTable } from "@/lib/payments/services";
 import { PeriodType } from "@/lib/validations/payments";
 import { prisma } from "@/lib/prisma";
+import { canAccessFinance, isLojaAdmin, isTesouraria } from "@/lib/roles";
 
 /**
  * GET /api/payments/table?type=MONTHLY|ANNUAL
@@ -42,6 +43,21 @@ export async function GET(request: NextRequest) {
     effectiveTenantId = tenantIdParam;
   }
 
+  if (!canAccessFinance(user.role) && user.role !== "MEMBER") {
+    return NextResponse.json(
+      { error: "Voce nao tem permissao para acessar pagamentos" },
+      { status: 403 }
+    );
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isTesouraria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    return NextResponse.json(
+      { error: "Usuario sem loja vinculada" },
+      { status: 403 }
+    );
+  }
+
   let memberId: string | undefined = undefined;
   if (user.role === "MEMBER") {
     const member = await prisma.member.findFirst({
@@ -62,6 +78,7 @@ export async function GET(request: NextRequest) {
   try {
     const data = await getPaymentsTable(effectiveTenantId, typeParam, {
       memberId,
+      lojaId: needsLojaRestriction ? user.lojaId ?? undefined : undefined,
     });
 
     return NextResponse.json(data);

@@ -130,6 +130,7 @@ export async function getPaymentsTable(
   type: string,
   options: {
     memberId?: string; // Para filtrar apenas um membro
+    lojaId?: string; // Para filtrar apenas uma loja
   } = {}
 ): Promise<PaymentsTableData> {
   // Garantir que os períodos existam antes de buscar
@@ -146,6 +147,10 @@ export async function getPaymentsTable(
     tenantId,
     situacao: "ATIVO",
   };
+
+  if (options.lojaId) {
+    memberWhere.lojaId = options.lojaId;
+  }
 
   if (options.memberId) {
     memberWhere.id = options.memberId;
@@ -187,24 +192,27 @@ export async function getPaymentsTable(
   });
 
   // Buscar status de pagamentos
-  const statuses = await prisma.paymentStatus.findMany({
-    where: {
-      tenantId,
-      periodId: {
-        in: periods.map((p) => p.id),
-      },
-      ...(options.memberId && { memberId: options.memberId }),
-    },
-    select: {
-      memberId: true,
-      periodId: true,
-      status: true,
-      amount: true,
-      method: true,
-      paidAt: true,
-      notes: true,
-    },
-  });
+  const memberIds = members.map((m) => m.id);
+  const statuses = memberIds.length
+    ? await prisma.paymentStatus.findMany({
+        where: {
+          tenantId,
+          periodId: {
+            in: periods.map((p) => p.id),
+          },
+          memberId: options.memberId ? options.memberId : { in: memberIds },
+        },
+        select: {
+          memberId: true,
+          periodId: true,
+          status: true,
+          amount: true,
+          method: true,
+          paidAt: true,
+          notes: true,
+        },
+      })
+    : [];
 
   return {
     members,

@@ -1,13 +1,7 @@
 ﻿"use client";
 
 import type { ReactNode } from "react";
-import { useActionState, useState } from "react";
-
-type Potencia = {
-  id: string;
-  nome: string;
-  sigla: string | null;
-};
+import { useActionState, useRef, useState } from "react";
 
 type Rito = {
   id: string;
@@ -21,15 +15,19 @@ type FormState = {
 
 type LojaFormProps = {
   action: (prevState: FormState, formData: FormData) => Promise<FormState>;
-  potencias: Potencia[];
+  potenciaLabel: string;
   ritos: Rito[];
 };
 
 const initialState: FormState = { error: null };
 
-export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
+export function LojaForm({ action, potenciaLabel, ritos }: LojaFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const [cnpj, setCnpj] = useState("");
+  const [shortName, setShortName] = useState("");
+  const [shortNameStatus, setShortNameStatus] = useState<
+    "idle" | "checking" | "available" | "unavailable" | "invalid"
+  >("idle");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [dataAbertura, setDataAbertura] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
@@ -42,32 +40,62 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
   const [enderecoBairro, setEnderecoBairro] = useState("");
   const [enderecoCidade, setEnderecoCidade] = useState("");
   const [enderecoUf, setEnderecoUf] = useState("");
+  const cnpjLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLookupDigits = useRef("");
+  const shortNameLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastShortNameLookup = useRef("");
 
-  const handleCnpjChange = (value: string) => {
-    setCnpjError("");
-    setCnpj(formatCnpj(value));
-  };
-
-  const handleCnpjBlur = async () => {
-    const digits = cnpj.replace(/\D/g, "");
+  const handleCnpjLookup = async (digits: string) => {
     if (digits.length !== 14) return;
-
     try {
       const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.message || data?.error) {
         setCnpjError(data?.message || "CNPJ nao encontrado na base publica.");
+        setRazaoSocial("");
+        setNomeFantasia("");
+        setDataAbertura("");
         return;
       }
       setCnpjError("");
-      if (data?.razao_social && !razaoSocial.trim()) setRazaoSocial(data.razao_social);
-      if (data?.nome_fantasia && !nomeFantasia.trim()) setNomeFantasia(data.nome_fantasia);
-      if (data?.data_inicio_atividade && !dataAbertura) {
-        setDataAbertura(String(data.data_inicio_atividade).slice(0, 10));
-      }
+      setRazaoSocial(data?.razao_social || "");
+      setNomeFantasia(data?.nome_fantasia || "");
+      setDataAbertura(
+        data?.data_inicio_atividade ? String(data.data_inicio_atividade).slice(0, 10) : ""
+      );
     } catch (_error) {
       setCnpjError("Nao foi possivel validar o CNPJ agora.");
+      setRazaoSocial("");
+      setNomeFantasia("");
+      setDataAbertura("");
     }
+  };
+
+  const triggerCnpjLookup = (digits: string) => {
+    if (digits.length < 14) return;
+
+    if (cnpjLookupTimer.current) {
+      clearTimeout(cnpjLookupTimer.current);
+    }
+
+    cnpjLookupTimer.current = setTimeout(() => {
+      if (digits !== lastLookupDigits.current) {
+        lastLookupDigits.current = digits;
+        void handleCnpjLookup(digits);
+      }
+    }, 400);
+  };
+
+  const handleCnpjChange = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    setCnpjError("");
+    setCnpj(formatCnpj(value));
+    triggerCnpjLookup(digits);
+  };
+
+  const handleCnpjBlur = () => {
+    const digits = cnpj.replace(/\D/g, "");
+    triggerCnpjLookup(digits);
   };
 
   const formatCep = (value: string) => {
@@ -81,6 +109,53 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
     setEnderecoCep(formatCep(value));
   };
 
+  const handleShortNameLookup = async (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed.length < 3) {
+      setShortNameStatus("invalid");
+      return;
+    }
+
+    setShortNameStatus("checking");
+
+    try {
+      const response = await fetch(`/api/lojas/shortname?value=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        setShortNameStatus("unavailable");
+        return;
+      }
+
+      const data = await response.json().catch(() => null);
+      if (data?.available) {
+        setShortNameStatus("available");
+        return;
+      }
+
+      setShortNameStatus("unavailable");
+    } catch (_error) {
+      setShortNameStatus("unavailable");
+    }
+  };
+
+  const triggerShortNameLookup = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed.length < 3) {
+      setShortNameStatus("idle");
+      return;
+    }
+
+    if (shortNameLookupTimer.current) {
+      clearTimeout(shortNameLookupTimer.current);
+    }
+
+    shortNameLookupTimer.current = setTimeout(() => {
+      if (trimmed !== lastShortNameLookup.current) {
+        lastShortNameLookup.current = trimmed;
+        void handleShortNameLookup(trimmed);
+      }
+    }, 350);
+  };
+
   const handleCepBlur = async () => {
     const digits = enderecoCep.replace(/\D/g, "");
     if (digits.length !== 8) return;
@@ -88,12 +163,12 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
     try {
       const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       if (!response.ok) {
-        setCepError("CEP n?o encontrado.");
+        setCepError("CEP não encontrado.");
         return;
       }
       const data = await response.json();
       if (data?.erro) {
-        setCepError("CEP n?o encontrado.");
+        setCepError("CEP não encontrado.");
         return;
       }
 
@@ -105,7 +180,7 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
         setEnderecoComplemento(data.complemento);
       }
     } catch (_error) {
-      setCepError("N?o foi poss?vel validar o CEP agora.");
+      setCepError("Não foi possível validar o CEP agora.");
     }
   };
 
@@ -141,19 +216,7 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
             />
           </Field>
 
-          {/* Linha 2: Nome da organização (toda a linha) */}
-          <div className="md:col-span-2">
-            <Field label="Nome da organização (tenant)" required>
-              <input
-                name="tenantName"
-                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none"
-                placeholder="Ex: Loja Aurora - REAA"
-                required
-              />
-            </Field>
-          </div>
-
-          {/* Linha 3: Telefone e E-mail */}
+          {/* Linha 2: Telefone e E-mail */}
           <Field label="Telefone" required>
             <input
               name="telefone"
@@ -214,7 +277,7 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
 
       <Section title="Dados da Loja">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Nome da Loja (Mesa Extraordinária)" required>
+          <Field label="Nome da Loja" required>
             <input
               name="lojaMX"
               className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none"
@@ -222,20 +285,38 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
               required
             />
           </Field>
-          <Field label="Potência" required>
-            <select
-              name="potenciaId"
-              required
+          <Field label="Nome curto (Short name)" required>
+            <input
+              name="shortName"
+              value={shortName}
+              onChange={(e) => {
+                setShortName(e.target.value);
+                triggerShortNameLookup(e.target.value);
+              }}
+              onBlur={() => triggerShortNameLookup(shortName)}
               className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none"
-            >
-              <option value="">Selecione a potência</option>
-              {potencias.map((potencia) => (
-                <option key={potencia.id} value={potencia.id}>
-                  {potencia.sigla ? `${potencia.sigla} - ` : ""}
-                  {potencia.nome}
-                </option>
-              ))}
-            </select>
+              placeholder="Ex: LojaPadraoRER"
+              required
+            />
+            {shortNameStatus === "checking" && (
+              <span className="text-xs text-muted-foreground">Verificando nome curto...</span>
+            )}
+            {shortNameStatus === "available" && (
+              <span className="text-xs text-emerald-700">Nome curto disponivel.</span>
+            )}
+            {shortNameStatus === "unavailable" && (
+              <span className="text-xs text-red-600">Nome curto ou tenant ja existe.</span>
+            )}
+            {shortNameStatus === "invalid" && (
+              <span className="text-xs text-red-600">Informe ao menos 3 caracteres.</span>
+            )}
+          </Field>
+          <Field label="Prefeitura">
+            <input
+              value={potenciaLabel}
+              readOnly
+              className="h-10 w-full cursor-not-allowed rounded-md border border-border bg-muted px-3 text-sm text-muted-foreground"
+            />
           </Field>
           <Field label="Número (ritualístico)">
             <input
@@ -464,7 +545,8 @@ export function LojaForm({ action, potencias, ritos }: LojaFormProps) {
       <div className="flex items-center gap-3 border-t-2 border-border pt-6">
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-emerald-600 px-8 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-700 hover:shadow-lg"
+          disabled={shortNameStatus === "checking" || shortNameStatus === "unavailable" || shortNameStatus === "invalid"}
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-emerald-600 px-8 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cadastrar loja
         </button>

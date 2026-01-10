@@ -2,9 +2,15 @@ import { z } from 'zod';
 
 export const UserRoleEnum = z.enum([
   'SYS_ADMIN',
+  'ADMIN_SAAS',
+  'ADMIN_POT',
+  'ADMIN_LOJA',
+  'SECRETARIO_LOJA',
+  'TESOUREIRO',
   'LODGE_ADMIN',
   'SECRETARY',
   'FINANCE',
+  'ADMIN',
   'MEMBER',
 ]);
 

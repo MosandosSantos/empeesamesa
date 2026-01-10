@@ -102,14 +102,12 @@ model Member {
   lojaId String
 
   // Campos legados (deprecated - usar lojaId)
-  lojaAtualNome        String?
-  lojaAtualNumero      String?
-  dataEntradaLojaAtual DateTime? // Data de entrada na loja atual
   rito                 String? // RER, REAA, etc.
 
   // Dados do cadastro na Potência
   dataAdmissao  DateTime
   tipoAdmissao  String // INIC, FILI, READ
+  condicaoMensalidade String @default("REGULAR") @map("condicao_mensalidade")
   numeroFiliado String?
 
   // Dados pessoais
@@ -118,7 +116,6 @@ model Member {
   pai            String
   mae            String
   naturalCidade  String
-  naturalUf      String // AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO
   nacionalidade  String
   estadoCivil    String // SOLTEIRO, CASADO, DIVORCIADO, VIUVO, UNIAO_ESTAVEL
 
@@ -133,6 +130,8 @@ model Member {
   celular            String
   telefoneUrgencia   String
   enderecoLogradouro String
+  enderecoNumero     String?
+  enderecoComplemento String?
   enderecoCep        String
   enderecoBairro     String
   enderecoCidade     String
@@ -177,6 +176,7 @@ model Member {
   // Estado
   situacao String @default("ATIVO") // ATIVO, PROPOSTO, ADORMECIDO
   class    String? // AP, CM, MM, MI
+  cargo    String? @default("SC")
 
   // Datas de progressão nos graus maçônicos
   dataAP DateTime? // Data em que se tornou Aprendiz
@@ -284,6 +284,7 @@ model Loja {
 
   // Dados básicos
   lojaMX           String   // Nome da Loja de Mesa (Loja de Santo André - Grau 4 RER)
+  shortName        String?  @unique @map("short_name")
   numero           Int?     // Número ritualístico da Loja
   contatoNome      String?
 
@@ -333,6 +334,9 @@ model Loja {
 
   // Valores de mensalidade (Sprint Pagamentos)
   valorMensalidade Decimal @default(150.00) @db.Decimal(10, 2)
+  mensalidadeRegular Decimal? @db.Decimal(10, 2) @map("mensalidade_regular")
+  mensalidadeFiliado Decimal? @db.Decimal(10, 2) @map("mensalidade_filiado")
+  mensalidadeRemido Decimal? @db.Decimal(10, 2) @map("mensalidade_remido")
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -365,6 +369,7 @@ model Categoria {
   id        String   @id @default(uuid())
   tenantId  String
   nome      String
+  tipo      String   @default("DESPESA") // RECEITA | DESPESA
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -374,8 +379,9 @@ model Categoria {
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lancamentos Lancamento[]
 
-  @@unique([tenantId, nome])
+  @@unique([tenantId, nome, tipo])
   @@index([tenantId])
+  @@index([tenantId, tipo])
   @@map("categoria")
 }
 

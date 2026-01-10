@@ -10,11 +10,14 @@ export type LojaRow = {
   numero?: number;
   tenantId: string;
   tenantName: string;
+  shortName?: string | null;
   potencia?: string | null;
   rito?: string | null;
   contrato: string;
   contatoNome?: string | null;
   telefone?: string | null;
+  enderecoNumero?: string | null;
+  enderecoComplemento?: string | null;
   status: "ATIVA" | "VENCIDA" | "SUSPENSA";
   validade: string | null;
   situacao: string;
@@ -26,9 +29,15 @@ const PAGE_SIZE = 10;
 export default function LojasTable({
   lojas,
   stats,
+  canCreate = true,
+  canEdit = true,
+  canDelete = true,
 }: {
   lojas: LojaRow[];
   stats: { total: number; ativas: number; vencidas: number };
+  canCreate?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"Todas" | LojaRow["status"]>("Todas");
@@ -39,7 +48,7 @@ export default function LojasTable({
     return lojas.filter((l) => {
       const matchTexto =
         l.nome.toLowerCase().includes(texto) ||
-        l.tenantName.toLowerCase().includes(texto) ||
+        (l.shortName ?? "").toLowerCase().includes(texto) ||
         l.contrato.toLowerCase().includes(texto) ||
         (l.potencia ?? "").toLowerCase().includes(texto) ||
         (l.rito ?? "").toLowerCase().includes(texto) ||
@@ -65,7 +74,7 @@ export default function LojasTable({
               setBusca(e.target.value);
               setPagina(1);
             }}
-            placeholder="Buscar por tenant, contrato, potencia, rito ou cidade"
+            placeholder="Buscar por nome curto, contrato, prefeitura, rito ou cidade"
             className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:border-foreground focus:outline-none md:w-96"
           />
           <select
@@ -82,13 +91,15 @@ export default function LojasTable({
             <option value="SUSPENSA">SUSPENSA</option>
           </select>
         </div>
-        <Link
-          href="/admin/lojas/novo"
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:shadow-md"
-        >
-          <Plus size={16} className="text-primary-foreground" aria-hidden />
-          <span>Incluir loja</span>
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/lojas/novo"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:shadow-md"
+          >
+            <Plus size={16} className="text-primary-foreground" aria-hidden />
+            <span>Incluir loja</span>
+          </Link>
+        )}
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -101,15 +112,17 @@ export default function LojasTable({
         <table className="min-w-full text-left text-xs">
           <thead className="bg-[#3b4d3b] text-white">
             <tr>
-              <Th>Tenant</Th>
-              <Th>Potencia</Th>
+              <Th>Loja</Th>
+              <Th>Nome curto</Th>
+              <Th className="text-center">Prefeitura</Th>
               <Th>Rito</Th>
               <Th>Contato</Th>
               <Th>Telefone</Th>
-              <Th>Dia vencimento</Th>
-              <Th>Status</Th>
+              <Th>Número</Th>
+              <Th>Complemento</Th>
+              <Th className="text-center">Status</Th>
               <Th>Membros</Th>
-              <Th className="text-right">Acoes</Th>
+              <Th className="text-right">{"A\u00e7\u00f5es"}</Th>
             </tr>
           </thead>
           <tbody>
@@ -118,12 +131,17 @@ export default function LojasTable({
                 <Td>
                   <div className="font-medium text-foreground">
                     {l.nome}
-                    {l.numero ? ` · Nº ${l.numero}` : ""}
+                    {l.numero ? ` - N\u00ba ${l.numero}` : ""}
                   </div>
                 </Td>
                 <Td>
                   <div className="text-[11px] text-muted-foreground">
-                    {l.potencia ?? "Sem potencia"}
+                    {l.shortName ?? "-"}
+                  </div>
+                </Td>
+                <Td className="text-center">
+                  <div className="text-[11px] text-muted-foreground">
+                    {l.potencia ?? "Sem prefeitura"}
                   </div>
                 </Td>
                 <Td>
@@ -141,13 +159,18 @@ export default function LojasTable({
                     {l.telefone ?? "Sem telefone"}
                   </div>
                 </Td>
-               
                 <Td>
                   <div className="text-[11px] text-muted-foreground">
-                    {l.validade || "-"}
+                    {l.enderecoNumero ?? "-"}
                   </div>
                 </Td>
                 <Td>
+                  <div className="text-[11px] text-muted-foreground">
+                    {l.enderecoComplemento ?? "-"}
+                  </div>
+                </Td>
+               
+                <Td className="text-center">
                   <StatusDot status={l.status} />
                 </Td>
                 <Td>{l.totalMembros}</Td>
@@ -165,25 +188,33 @@ export default function LojasTable({
                       variant="ghost"
                       icon={<Eye size={16} />}
                     />
-                    <IconLink
-                      href={`/admin/lojas/${l.id}/editar`}
-                      label="Editar"
-                      variant="default"
-                      icon={<Pencil size={16} />}
-                    />
-                    <IconLink
-                      href={`/admin/lojas/${l.id}/excluir`}
-                      label="Excluir"
-                      variant="danger"
-                      icon={<Trash2 size={16} />}
-                    />
+                    {(canEdit || canDelete) && (
+                      <>
+                        {canEdit && (
+                          <IconLink
+                            href={`/admin/lojas/${l.id}/editar`}
+                            label="Editar"
+                            variant="default"
+                            icon={<Pencil size={16} />}
+                          />
+                        )}
+                        {canDelete && (
+                          <IconLink
+                            href={`/admin/lojas/${l.id}/excluir`}
+                            label="Excluir"
+                            variant="danger"
+                            icon={<Trash2 size={16} />}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 </Td>
               </tr>
             ))}
             {lojasPagina.length === 0 && (
               <tr>
-                <Td colSpan={9} className="py-8 text-center text-muted-foreground">
+                <Td colSpan={12} className="py-8 text-center text-muted-foreground">
                   Nenhuma loja encontrada com os filtros aplicados.
                 </Td>
               </tr>
@@ -194,7 +225,7 @@ export default function LojasTable({
 
       <div className="mt-4 flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground md:flex-row">
         <span>
-          Pagina {paginaSegura} de {totalPaginas} · {filtrados.length} registros
+          {"P\u00e1gina"} {paginaSegura} de {totalPaginas} - {filtrados.length} registros
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -209,7 +240,7 @@ export default function LojasTable({
             disabled={paginaSegura === totalPaginas}
             className="h-9 rounded-md border border-border px-3 font-medium text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Proxima
+            {"Pr\u00f3xima"}
           </button>
         </div>
       </div>
@@ -323,3 +354,5 @@ function IconLink({
     </Link>
   );
 }
+
+

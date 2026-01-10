@@ -34,7 +34,7 @@ Substituir controles manuais e planilhas por uma plataforma centralizada que ger
 
 ## Status do Projeto
 
-**Sprint Atual**: Sprint 0 - Fundação
+**Sprint Atual**: Sprint Amanhã - Membros e Presenca
 
 O projeto está em fase inicial de desenvolvimento. Consulte [Sprints.md](./Sprints.md) para detalhes do planejamento.
 

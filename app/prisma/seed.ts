@@ -197,7 +197,6 @@ async function main() {
       contatoNome: "Maria Andrade",
       contractNumber: "SAAS-2025-0001",
       mensalidadeAtiva: true,
-      mensalidadeValidaAte: new Date("2025-12-31"),
       cnpj: "12345678000190",
       email: "secretaria@loja001.org.br",
       telefone: "+5521987654321",
@@ -233,7 +232,6 @@ async function main() {
       contatoNome: "Carlos Mendes",
       contractNumber: "SAAS-2025-0022",
       mensalidadeAtiva: false,
-      mensalidadeValidaAte: new Date("2024-12-31"),
       situacao: "ADORMECIDA",
       enderecoCidade: "Curitiba",
       enderecoUf: "PR",
@@ -298,8 +296,6 @@ async function main() {
         data: {
           tenantId: defaultTenant.id,
           lojaId: lojaPadrao.id,
-          lojaAtualNome: lojaPadrao.lojaMX,
-          lojaAtualNumero: lojaPadrao.numero?.toString(),
           dataAdmissao: new Date("2020-01-15"),
           tipoAdmissao: "INIC",
           numeroFiliado: member.numeroFiliado,
@@ -308,7 +304,6 @@ async function main() {
           pai: `Jose ${member.nomeCompleto.split(' ')[1]}`,
           mae: `Maria ${member.nomeCompleto.split(' ')[1]}`,
           naturalCidade: "Florianopolis",
-          naturalUf: "SC",
           nacionalidade: "Brasileira",
           estadoCivil: "CASADO",
           identidadeNumero: `RG-${index + 1}`,
@@ -330,6 +325,7 @@ async function main() {
           potenciaIniciacaoId: defaultTenant.id,
           situacao: "ATIVO",
           class: member.class,
+          cargo: "SC",
           ...degreeDates[member.class],
         },
       })
@@ -341,20 +337,27 @@ async function main() {
   console.log(`Created sample members: ${members.length}`);
   // Create default categories (Sprint 6)
   const defaultCategories = [
-    "Mensalidades",
-    "Doacoes",
-    "Aluguel",
-    "Suprimentos",
-    "Eventos",
-    "Manutencao",
+    { nome: "Mensalidades", tipo: "RECEITA" },
+    { nome: "Doacoes", tipo: "RECEITA" },
+    { nome: "Eventos", tipo: "RECEITA" },
+    { nome: "Aluguel", tipo: "DESPESA" },
+    { nome: "Suprimentos", tipo: "DESPESA" },
+    { nome: "Manutencao", tipo: "DESPESA" },
+    { nome: "GL", tipo: "DESPESA" },
+    { nome: "Iniciacao", tipo: "DESPESA" },
+    { nome: "Agape", tipo: "DESPESA" },
+    { nome: "Despesas comuns de funcionarios", tipo: "DESPESA" },
+    { nome: "Limpeza", tipo: "DESPESA" },
+    { nome: "Despesas comuns de loja masonica", tipo: "DESPESA" },
   ];
 
   const createdCategories = await Promise.all(
-    defaultCategories.map((nome) =>
+    defaultCategories.map((categoria) =>
       prisma.categoria.create({
         data: {
           tenantId: defaultTenant.id,
-          nome,
+          nome: categoria.nome,
+          tipo: categoria.tipo,
         },
       })
     )
@@ -363,8 +366,12 @@ async function main() {
   console.log(`Created ${createdCategories.length} default categories`);
 
   // Create some sample lancamentos (financial entries)
-  const categoriaMensalidades = createdCategories.find((c) => c.nome === "Mensalidades");
-  const categoriaAluguel = createdCategories.find((c) => c.nome === "Aluguel");
+  const categoriaMensalidades = createdCategories.find(
+    (c) => c.nome === "Mensalidades" && c.tipo === "RECEITA"
+  );
+  const categoriaAluguel = createdCategories.find(
+    (c) => c.nome === "Aluguel" && c.tipo === "DESPESA"
+  );
 
   if (categoriaMensalidades) {
     await prisma.lancamento.create({

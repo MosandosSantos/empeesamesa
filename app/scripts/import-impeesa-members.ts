@@ -277,9 +277,6 @@ const main = async () => {
       data: {
         tenantId: tenant.id,
         lojaId: loja.id,
-        lojaAtualNome: loja.lojaMX,
-        lojaAtualNumero: loja.numero?.toString(),
-        dataEntradaLojaAtual: dataAdmissao,
         rito: null,
         dataAdmissao,
         tipoAdmissao: "INIC",
@@ -289,7 +286,6 @@ const main = async () => {
         pai: "Nao informado",
         mae: "Nao informado",
         naturalCidade: cidade,
-        naturalUf: uf,
         nacionalidade: "Brasileira",
         estadoCivil: "SOLTEIRO",
         identidadeNumero: `RG${padNumber(index + 1, 6)}`,

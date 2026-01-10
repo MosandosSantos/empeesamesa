@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
 import {
@@ -18,15 +18,11 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Persist collapsed state in localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved !== null) {
-      setIsCollapsed(saved === "true");
-    }
-  }, []);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const saved = window.localStorage.getItem("sidebar-collapsed");
+    return saved === "true";
+  });
 
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
@@ -87,7 +83,7 @@ export function AppShell({ children }: AppShellProps) {
                     SAL GOISC
                   </p>
                   <p className="text-base font-semibold text-foreground">
-                    {"Sistema de gest\u00e3o de lojas de mesa"}
+                    {"Sistemas de Administra\u00e7\u00e3o de Lojas"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     &copy; {new Date().getFullYear()} Todos os direitos
@@ -101,7 +97,7 @@ export function AppShell({ children }: AppShellProps) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {"Desenvolvido por MX Mos\u00e1n dos Santos"}
+                    {"Desenvolvido por EsferaDataSci. Respons\u00e1vel Mos\u00e1n dos Santos."}
                   </a>
                   <a
                     className="text-muted-foreground transition-colors hover:text-foreground"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth, getUserFromPayload } from "@/lib/api-auth";
 import prisma from "@/lib/prisma";
+import { isLojaAdmin, isPotAdmin, isSysAdmin } from "@/lib/roles";
 
 // PUT /api/lojas/[id] - Update lodge
 export async function PUT(
@@ -16,7 +17,8 @@ export async function PUT(
       return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 401 });
     }
 
-    if (user.role !== "ADMIN" && user.role !== "SYS_ADMIN") {
+    const canManageLoja = isSysAdmin(user.role) || isLojaAdmin(user.role) || isPotAdmin(user.role);
+    if (!canManageLoja) {
       return NextResponse.json({ error: "Somente admin" }, { status: 403 });
     }
 
@@ -29,6 +31,8 @@ export async function PUT(
       select: {
         id: true,
         tenantId: true,
+        potenciaId: true,
+        shortName: true,
       },
     });
 
@@ -36,13 +40,70 @@ export async function PUT(
       return NextResponse.json({ error: "Loja nao encontrada" }, { status: 404 });
     }
 
-    // SYS_ADMIN can edit any lodge, ADMIN can only edit from their tenant
-    if (user.role !== "SYS_ADMIN" && existingLoja.tenantId !== user.tenantId) {
+    // Admin de loja pode editar somente sua loja, admin do sistema pode editar do tenant.
+    if (!isSysAdmin(user.role)) {
+      if (existingLoja.tenantId !== user.tenantId) {
+        return NextResponse.json({ error: "Sem permissao para editar esta loja" }, { status: 403 });
+      }
+
+      if (isLojaAdmin(user.role) && user.lojaId && existingLoja.id !== user.lojaId) {
+        return NextResponse.json({ error: "Sem permissao para editar esta loja" }, { status: 403 });
+      }
+    }
+
+    if (isLojaAdmin(user.role) && !user.lojaId) {
       return NextResponse.json({ error: "Sem permissao para editar esta loja" }, { status: 403 });
+    }
+
+    if (isPotAdmin(user.role)) {
+      if (!user.potenciaId) {
+        return NextResponse.json({ error: "Sem permissao para editar esta loja" }, { status: 403 });
+      }
+      if (!existingLoja.potenciaId || existingLoja.potenciaId !== user.potenciaId) {
+        return NextResponse.json({ error: "Sem permissao para editar esta loja" }, { status: 403 });
+      }
     }
 
     if (!body.contatoNome || !String(body.contatoNome).trim()) {
       return NextResponse.json({ error: "Nome do contato e obrigatorio" }, { status: 400 });
+    }
+
+    if (!body.shortName || !String(body.shortName).trim()) {
+      return NextResponse.json({ error: "Nome curto e obrigatorio" }, { status: 400 });
+    }
+
+    const shortNameValue = String(body.shortName).trim();
+    if (shortNameValue.toLowerCase() !== String(existingLoja.shortName ?? "").toLowerCase()) {
+      const existingShortName = await prisma.loja.findFirst({
+        where: {
+          shortName: { equals: shortNameValue, mode: "insensitive" },
+          id: { not: existingLoja.id },
+        },
+        select: { id: true },
+      });
+
+      if (existingShortName) {
+        return NextResponse.json({ error: "Nome curto ja existe" }, { status: 400 });
+      }
+
+      const existingTenant = await prisma.tenant.findFirst({
+        where: {
+          name: { equals: shortNameValue, mode: "insensitive" },
+          id: { not: existingLoja.tenantId },
+        },
+        select: { id: true },
+      });
+
+      if (existingTenant) {
+        return NextResponse.json({ error: "Tenant ja existe" }, { status: 400 });
+      }
+    }
+
+    if (shortNameValue && shortNameValue !== existingLoja.shortName) {
+      await prisma.tenant.update({
+        where: { id: existingLoja.tenantId },
+        data: { name: shortNameValue },
+      });
     }
 
     // Update lodge
@@ -50,6 +111,7 @@ export async function PUT(
       where: { id },
       data: {
         lojaMX: body.lojaMX,
+        shortName: shortNameValue,
         numero: body.numero,
         potenciaId: body.potenciaId,
         ritoId: body.ritoId,
@@ -59,6 +121,9 @@ export async function PUT(
         mensalidadeAtiva: body.mensalidadeAtiva,
         mensalidadeVencimentoDia: body.mensalidadeVencimentoDia !== undefined ? body.mensalidadeVencimentoDia : undefined,
         valorMensalidade: body.valorMensalidade !== undefined ? body.valorMensalidade : undefined,
+        mensalidadeRegular: body.mensalidadeRegular !== undefined ? body.mensalidadeRegular : undefined,
+        mensalidadeFiliado: body.mensalidadeFiliado !== undefined ? body.mensalidadeFiliado : undefined,
+        mensalidadeRemido: body.mensalidadeRemido !== undefined ? body.mensalidadeRemido : undefined,
         cnpj: body.cnpj || null,
         razaoSocial: body.razaoSocial || null,
         nomeFantasia: body.nomeFantasia || null,
@@ -108,7 +173,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 401 });
     }
 
-    if (user.role !== "ADMIN" && user.role !== "SYS_ADMIN") {
+    const canDeleteLoja = isSysAdmin(user.role) || isLojaAdmin(user.role) || isPotAdmin(user.role);
+    if (!canDeleteLoja) {
       return NextResponse.json({ error: "Somente admin" }, { status: 403 });
     }
 
@@ -119,6 +185,7 @@ export async function DELETE(
       select: {
         id: true,
         tenantId: true,
+        potenciaId: true,
         lojaMX: true,
         _count: {
           select: {
@@ -137,9 +204,28 @@ export async function DELETE(
       return NextResponse.json({ error: "Loja nao encontrada" }, { status: 404 });
     }
 
-    // SYS_ADMIN can delete any lodge, ADMIN can only delete from their tenant
-    if (user.role !== "SYS_ADMIN" && loja.tenantId !== user.tenantId) {
+    // Admin de loja pode excluir somente sua loja, admins do SaaS podem excluir do tenant.
+    if (!isSysAdmin(user.role)) {
+      if (loja.tenantId !== user.tenantId) {
+        return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
+      }
+
+      if (isLojaAdmin(user.role) && user.lojaId && loja.id !== user.lojaId) {
+        return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
+      }
+    }
+
+    if (isLojaAdmin(user.role) && !user.lojaId) {
       return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
+    }
+
+    if (isPotAdmin(user.role)) {
+      if (!user.potenciaId) {
+        return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
+      }
+      if (loja.potenciaId !== user.potenciaId) {
+        return NextResponse.json({ error: "Sem permissao para excluir esta loja" }, { status: 403 });
+      }
     }
 
     // Check for any related records that would prevent deletion

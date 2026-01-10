@@ -44,6 +44,7 @@ export async function PUT(
       where: {
         tenantId: payload!.tenantId,
         nome: nome.trim(),
+        tipo: existing.tipo,
         id: { not: id },
       },
     });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
+import { isValidTipoLancamento, TipoLancamento } from "@/types/financeiro";
 
 /**
  * GET /api/categorias
@@ -17,9 +18,18 @@ export async function GET(request: NextRequest) {
 
     console.log("[API Categorias] Tenant ID:", payload!.tenantId);
 
+    const tipoParam = request.nextUrl.searchParams.get("tipo");
+    if (tipoParam && !isValidTipoLancamento(tipoParam)) {
+      return NextResponse.json(
+        { error: "Tipo invalido" },
+        { status: 400 }
+      );
+    }
+
     const categorias = await prisma.categoria.findMany({
       where: {
         tenantId: payload!.tenantId,
+        ...(tipoParam ? { tipo: tipoParam } : {}),
       },
       orderBy: {
         nome: "asc",
@@ -49,7 +59,8 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     const body = await request.json();
-    const { nome } = body;
+    const { nome, tipo } = body;
+    const tipoValue = tipo ?? TipoLancamento.DESPESA;
 
     if (!nome || typeof nome !== "string" || nome.trim().length === 0) {
       return NextResponse.json(
@@ -58,12 +69,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!isValidTipoLancamento(tipoValue)) {
+      return NextResponse.json(
+        { error: "Tipo invalido" },
+        { status: 400 }
+      );
+    }
+
     // Check if category already exists for this tenant
     const existing = await prisma.categoria.findUnique({
       where: {
-        tenantId_nome: {
+        tenantId_nome_tipo: {
           tenantId: payload!.tenantId,
           nome: nome.trim(),
+          tipo: tipoValue,
         },
       },
     });
@@ -79,6 +98,7 @@ export async function POST(request: NextRequest) {
       data: {
         tenantId: payload!.tenantId,
         nome: nome.trim(),
+        tipo: tipoValue,
       },
     });
 

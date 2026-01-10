@@ -1,12 +1,21 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import DeleteLojaForm from "./delete-form";
+import { getCurrentUser } from "@/lib/server-auth";
 
 export default async function ExcluirLojaPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role === "ADMIN_SAAS") {
+    redirect("/admin/lojas");
+  }
+
   const { id } = await params;
 
   const loja = await prisma.loja.findUnique({

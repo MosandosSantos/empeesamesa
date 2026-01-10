@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { getUserFromPayload } from "@/lib/api-auth";
+import { isLojaAdmin, isSecretaria, isTesouraria } from "@/lib/roles";
 
 async function getCurrentUser() {
   const token = (await cookies()).get("auth-token")?.value ?? null;
@@ -22,6 +23,12 @@ export default async function PotenciaDetalhePage({
 }) {
   const { id } = await params;
   const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (isLojaAdmin(user.role) || isSecretaria(user.role) || isTesouraria(user.role)) {
+    redirect("/");
+  }
   const tenantId = user?.tenantId ?? null;
 
   const potencia = await prisma.potencia.findFirst({
@@ -83,20 +90,20 @@ export default async function PotenciaDetalhePage({
       </div>
 
       <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm">
-        <Section title="Dados principais">
+        <Section title={"Dados principais"}>
           <Field label="Nome" value={potencia.nome} />
           <Field label="Sigla" value={potencia.sigla} />
-          <Field label="Email" value={potencia.email} />
+          <Field label="E-mail" value={potencia.email} />
           <Field label="Telefone" value={potencia.telefone} />
-          <Field label="Website" value={potencia.website} />
+          <Field label="Site" value={potencia.website} />
         </Section>
 
         <Divider />
 
-        <Section title="Endereco" cols={2}>
+        <Section title={"Endere\u00e7o"} cols={2}>
           <Field label="CEP" value={potencia.enderecoCep} />
           <Field label="Logradouro" value={potencia.enderecoLogradouro} />
-          <Field label="Numero" value={potencia.enderecoNumero} />
+          <Field label={"N\u00famero"} value={potencia.enderecoNumero} />
           <Field label="Complemento" value={potencia.enderecoComplemento} />
           <Field label="Bairro" value={potencia.enderecoBairro} />
           <Field
@@ -115,18 +122,16 @@ export default async function PotenciaDetalhePage({
           <Field label="Lojas vinculadas" value={potencia._count.lojas.toString()} />
         </Section>
 
-        {potencia.observacoes && (
-          <>
-            <Divider />
-            <Section title="Observacoes">
-              <div className="col-span-full rounded-md border border-border bg-background px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm text-foreground">
-                  {potencia.observacoes}
-                </p>
-              </div>
-            </Section>
-          </>
-        )}
+        <>
+          <Divider />
+          <Section title={"Observa\u00e7\u00f5es"}>
+            <div className="col-span-full rounded-md border border-border bg-background px-4 py-3">
+              <p className="whitespace-pre-wrap text-sm text-foreground">
+                {potencia.observacoes || "-"}
+              </p>
+            </div>
+          </Section>
+        </>
       </div>
     </div>
   );

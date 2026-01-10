@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/server-auth";
+import { canDeleteMembers, isLojaAdmin } from "@/lib/roles";
 import DeleteMemberForm from "./delete-form";
 
 export default async function ExcluirMembroPage({
@@ -9,8 +11,26 @@ export default async function ExcluirMembroPage({
 }) {
   const { id } = await params;
 
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (!canDeleteMembers(user.role)) {
+    redirect("/membros");
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    redirect("/membros");
+  }
+
   const member = await prisma.member.findUnique({
-    where: { id },
+    where: {
+      id,
+      tenantId: user.tenantId,
+      ...(needsLojaRestriction ? { lojaId: user.lojaId } : {}),
+    },
     select: {
       id: true,
       nomeCompleto: true,

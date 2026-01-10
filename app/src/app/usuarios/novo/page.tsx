@@ -23,10 +23,16 @@ interface Loja {
 
 const ROLES = [
   { value: "MEMBER", label: "Membro" },
-  { value: "FINANCE", label: "Financeiro" },
-  { value: "SECRETARY", label: "Secretário" },
-  { value: "LODGE_ADMIN", label: "Administrador da Loja" },
+  { value: "TESOUREIRO", label: "Tesoureiro" },
+  { value: "SECRETARIO_LOJA", label: "Secretário da Loja" },
+  { value: "ADMIN_LOJA", label: "Administrador da Loja" },
+  { value: "ADMIN_POT", label: "Administrador de Prefeitura" },
+  { value: "ADMIN_SAAS", label: "Administrador do SaaS" },
   { value: "SYS_ADMIN", label: "Administrador do Sistema" },
+  { value: "FINANCE", label: "Financeiro (legado)" },
+  { value: "SECRETARY", label: "Secretário (legado)" },
+  { value: "LODGE_ADMIN", label: "Administrador da Loja (legado)" },
+  { value: "ADMIN", label: "Administrador (legado)" },
 ];
 
 export default function NovoUsuarioPage() {
@@ -86,9 +92,10 @@ export default function NovoUsuarioPage() {
 
       alert("Usuário criado e convite enviado com sucesso! Verifique o console.");
       router.push("/usuarios");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao criar usuário:", error);
-      alert(error.message || "Erro ao criar usuário");
+      const message = error instanceof Error ? error.message : "Erro ao criar usuário";
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -211,3 +218,4 @@ export default function NovoUsuarioPage() {
     </div>
   );
 }
+

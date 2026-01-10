@@ -35,21 +35,21 @@ export default async function EditarPotenciaPage({
   }
 
   if (user?.role !== "ADMIN_SAAS" && user?.role !== "SYS_ADMIN") {
-    redirect(`/potencias/${potencia.id}`);
+    redirect("/potencias");
   }
 
   async function updatePotencia(_: FormState, formData: FormData): Promise<FormState> {
     "use server";
 
     const userInner = await getCurrentUser();
-    if (!userInner) return { error: "Nao autorizado." };
+    if (!userInner) return { error: "N\u00e3o autorizado." };
     if (userInner.role !== "ADMIN_SAAS" && userInner.role !== "SYS_ADMIN") {
-      return { error: "Sem permissao para editar potencia." };
+      return { error: "Sem permiss\u00e3o para editar prefeitura." };
     }
 
     const nome = formData.get("nome")?.toString().trim();
     if (!nome) {
-      return { error: "O nome da potencia e obrigatorio." };
+      return { error: "O nome da prefeitura \u00e9 obrigat\u00f3rio." };
     }
 
     await prisma.potencia.update({
@@ -71,21 +71,23 @@ export default async function EditarPotenciaPage({
       },
     });
 
-    redirect(`/potencias/${potencia.id}`);
+    redirect("/potencias");
   }
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Atualizacao</p>
-          <h1 className="text-3xl font-bold tracking-tight text-br-deep">Editar potencia</h1>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {"Atualiza\u00e7\u00e3o"}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-br-deep">Editar prefeitura</h1>
           <p className="text-sm text-muted-foreground">
-            Atualize os dados principais da potencia.
+            Atualize os dados principais da prefeitura.
           </p>
         </div>
         <Link
-          href={`/potencias/${potencia.id}`}
+          href="/potencias"
           className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold text-foreground transition hover:bg-muted hover:border-gray-400"
         >
           Voltar
@@ -94,7 +96,8 @@ export default async function EditarPotenciaPage({
 
       <PotenciaForm
         action={updatePotencia}
-        submitLabel="Salvar alteracoes"
+        submitLabel="Salvar altera\u00e7\u00f5es"
+        cancelHref="/potencias"
         initialData={{
           nome: potencia.nome,
           sigla: potencia.sigla,
@@ -114,3 +117,4 @@ export default async function EditarPotenciaPage({
     </div>
   );
 }
+

@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/api-auth";
+import { getUserFromPayload, verifyAuth } from "@/lib/api-auth";
 import prisma from "@/lib/prisma";
+import { canAccessFinance, isLojaAdmin, isTesouraria } from "@/lib/roles";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { payload, error } = await verifyAuth(req);
+  if (error) return error;
+
+  const user = await getUserFromPayload(payload!);
+  if (!user) {
+    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  }
+
+  if (!canAccessFinance(user.role) && user.role !== "MEMBER") {
+    return NextResponse.json({ error: "Voce nao tem permissao para acessar pagamentos" }, { status: 403 });
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isTesouraria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    return NextResponse.json({ error: "Usuario sem loja vinculada" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -18,7 +31,7 @@ export async function GET(
     const member = await prisma.member.findFirst({
       where: {
         id,
-        tenantId: auth.tenantId,
+        tenantId: payload!.tenantId,
       },
     });
 
@@ -29,11 +42,33 @@ export async function GET(
       );
     }
 
+    if (user.role === "MEMBER") {
+      const memberSelf = await prisma.member.findFirst({
+        where: { tenantId: payload!.tenantId, email: user.email },
+        select: { id: true },
+      });
+
+      if (!memberSelf || memberSelf.id != id) {
+        return NextResponse.json({ error: "Voce nao tem permissao para acessar este membro" }, { status: 403 });
+      }
+    }
+
+    if (needsLojaRestriction) {
+      const memberLoja = await prisma.member.findFirst({
+        where: { id, tenantId: payload!.tenantId },
+        select: { lojaId: true },
+      });
+
+      if (!memberLoja || memberLoja.lojaId != user.lojaId) {
+        return NextResponse.json({ error: "Voce nao tem permissao para acessar este membro" }, { status: 403 });
+      }
+    }
+
     // Buscar todos os pagamentos do membro
     const payments = await prisma.memberPayment.findMany({
       where: {
         memberId: id,
-        tenantId: auth.tenantId,
+        tenantId: payload!.tenantId,
         amount: {
           gt: 0, // Apenas pagamentos com valor > 0
         },

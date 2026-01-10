@@ -43,8 +43,9 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
 
       router.push("/admin/lojas");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Erro ao excluir loja");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao excluir loja";
+      setError(message);
       setDeleting(false);
     }
   };
@@ -55,7 +56,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Excluir loja</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Confirme a exclusao permanente do registro
+            Confirme a exclusão permanente desta loja.
           </p>
         </div>
         <Link
@@ -74,8 +75,8 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
               <AlertTriangle className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-red-900">Atencao: acao irreversivel</h2>
-              <p className="text-sm text-red-700">Os dados serao excluidos permanentemente</p>
+              <h2 className="font-semibold text-red-900">Atenção: ação irreversível</h2>
+              <p className="text-sm text-red-700">Esta exclusão remove a loja e os dados vinculados.</p>
             </div>
           </div>
         </div>
@@ -93,7 +94,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
 
           <div className="rounded-lg border border-border bg-background p-4">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Loja a ser excluida:
+              Loja a ser excluída:
             </p>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600">
@@ -104,7 +105,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
                   {loja.nome}
                   {loja.numero ? ` #${loja.numero}` : ""}
                 </h3>
-                <p className="text-xs text-muted-foreground">Tenant: {loja.tenantName}</p>
+                <p className="text-xs text-muted-foreground">Organização (tenant): {loja.tenantName}</p>
               </div>
             </div>
             <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
@@ -112,7 +113,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
                 <span className="font-semibold text-foreground">Contrato:</span> {loja.contrato}
               </div>
               <div>
-                <span className="font-semibold text-foreground">Situacao:</span> {loja.situacao}
+                <span className="font-semibold text-foreground">Situação:</span> {loja.situacao}
               </div>
               <div>
                 <span className="font-semibold text-foreground">Contato:</span> {loja.contatoNome}
@@ -124,7 +125,8 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
                 <span className="font-semibold text-foreground">Cidade/UF:</span> {loja.cidadeUf}
               </div>
               <div>
-                <span className="font-semibold text-foreground">Dia de vencimento:</span> {loja.validade || "-"}
+                <span className="font-semibold text-foreground">Dia de vencimento da mensalidade:</span>{" "}
+                {loja.validade || "-"}
               </div>
             </div>
           </div>
@@ -133,8 +135,8 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
             <div className="flex gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
               <div className="text-sm text-amber-900">
-                <p className="mb-1 font-semibold">Esta acao nao pode ser desfeita</p>
-                <p>Os dados associados serao removidos do sistema.</p>
+                <p className="mb-1 font-semibold">Esta ação não pode ser desfeita.</p>
+                <p>Revise as informações antes de confirmar.</p>
               </div>
             </div>
           </div>
@@ -160,7 +162,7 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
               ) : (
                 <>
                   <Trash2 size={16} />
-                  Confirmar exclusao
+                  Confirmar exclusão
                 </>
               )}
             </button>
@@ -170,3 +172,5 @@ export default function DeleteLojaForm({ loja }: { loja: Loja }) {
     </div>
   );
 }
+
+

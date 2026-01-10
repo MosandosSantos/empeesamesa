@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/server-auth";
+import { canManageMembers, isLojaAdmin, isSecretaria } from "@/lib/roles";
 import EditMemberForm from "./edit-member-form";
 
 export const dynamic = "force-dynamic";
@@ -12,16 +12,26 @@ export default async function EditarMembroPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth-token")?.value ?? null;
-  const payload = token ? await verifyToken(token) : null;
-
-  if (!payload) {
+  const user = await getCurrentUser();
+  if (!user) {
     redirect("/login");
   }
 
+  if (!canManageMembers(user.role)) {
+    redirect("/membros");
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isSecretaria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    redirect("/membros");
+  }
+
   const member = await prisma.member.findUnique({
-    where: { id, tenantId: payload.tenantId },
+    where: {
+      id,
+      tenantId: user.tenantId,
+      ...(needsLojaRestriction ? { lojaId: user.lojaId } : {}),
+    },
   });
 
   if (!member) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
+import { canAccessPresence } from "@/lib/roles";
 
 export default function RelatoriosPage() {
   const [tipo, setTipo] = useState<"ranking" | "por-periodo">("ranking");
@@ -10,6 +11,7 @@ export default function RelatoriosPage() {
   const [dataFim, setDataFim] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const loadReport = async () => {
     setLoading(true);
@@ -29,8 +31,31 @@ export default function RelatoriosPage() {
   };
 
   useEffect(() => {
-    loadReport();
+    const checkRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setAuthError("N\u00e3o autorizado.");
+          return;
+        }
+        const result = await response.json();
+        const role = result?.user?.role ?? null;
+        if (!canAccessPresence(role)) {
+          setAuthError("Voc\u00ea n\u00e3o tem permiss\u00e3o para acessar presen\u00e7a.");
+          return;
+        }
+        loadReport();
+      } catch {
+        setAuthError("N\u00e3o foi poss\u00edvel validar a permiss\u00e3o.");
+      }
+    };
+
+    checkRole();
   }, [tipo, dataInicio, dataFim]);
+
+  if (authError) {
+    return <p className="text-sm text-red-600">{authError}</p>;
+  }
 
   return (
     <div className="space-y-6">
@@ -209,3 +234,4 @@ export default function RelatoriosPage() {
     </div>
   );
 }
+

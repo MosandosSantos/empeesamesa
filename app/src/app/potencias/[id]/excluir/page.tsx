@@ -47,14 +47,14 @@ export default async function ExcluirPotenciaPage({
 
     const userInner = await getCurrentUser();
     if (!userInner) {
-      return { error: "Nao autorizado." };
+      return { error: "N\u00e3o autorizado." };
     }
     if (userInner.role !== "ADMIN_SAAS" && userInner.role !== "SYS_ADMIN") {
-      return { error: "Sem permissao para excluir potencia." };
+      return { error: "Sem permiss\u00e3o para excluir prefeitura." };
     }
 
     if (potencia._count.lojas > 0) {
-      return { error: "Nao e possivel excluir uma potencia com lojas vinculadas." };
+      return { error: "N\u00e3o \u00e9 poss\u00edvel excluir uma prefeitura com lojas vinculadas." };
     }
 
     await prisma.potencia.delete({ where: { id: potencia.id } });
@@ -64,21 +64,23 @@ export default async function ExcluirPotenciaPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Confirmacao</p>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Excluir potencia</h1>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          {"Confirma\u00e7\u00e3o"}
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Excluir prefeitura</h1>
         <p className="text-sm text-muted-foreground">
-          Esta acao nao pode ser desfeita.
+          {"Esta a\u00e7\u00e3o n\u00e3o pode ser desfeita."}
         </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <p className="text-sm text-foreground">
-          Tem certeza que deseja excluir a potencia{" "}
+          Tem certeza que deseja excluir a prefeitura{" "}
           <span className="font-semibold">{potencia.nome}</span>?
         </p>
         {potencia._count.lojas > 0 && (
           <p className="mt-2 text-sm text-red-600">
-            Esta potencia possui {potencia._count.lojas} loja(s) vinculada(s).
+            Esta prefeitura possui {potencia._count.lojas} loja(s) vinculada(s).
           </p>
         )}
 
@@ -90,7 +92,7 @@ export default async function ExcluirPotenciaPage({
             Excluir
           </button>
           <Link
-            href={`/potencias/${potencia.id}`}
+            href="/potencias"
             className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-white px-4 text-sm font-semibold text-foreground transition hover:bg-muted"
           >
             Cancelar
@@ -100,3 +102,4 @@ export default async function ExcluirPotenciaPage({
     </div>
   );
 }
+

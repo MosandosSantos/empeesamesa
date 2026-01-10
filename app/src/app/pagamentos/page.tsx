@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -16,12 +16,18 @@ import {
 } from "@/components/ui/table";
 import { Calendar, History } from "lucide-react";
 import { KPICards } from "@/components/pagamentos/kpi-cards";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 type MemberSummary = {
   id: string;
   nomeCompleto: string;
   situacao: string;
   class: string | null;
+  condicaoMensalidade: CondicaoMensalidade;
+  mensalidadeValor: number;
+  mensalidadeRegular: number;
+  lojaId: string;
 };
 
 type Period = {
@@ -50,6 +56,7 @@ type LojaOption = {
 };
 
 type TabType = "mensalidade" | "anuidade" | "eventos";
+type CondicaoMensalidade = "REGULAR" | "FILIADO" | "REMIDO";
 
 const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const PAGE_SIZE = 10;
@@ -63,7 +70,6 @@ export default function PagamentosPage() {
   const [lojaId, setLojaId] = useState("all");
   const [pageMensalidade, setPageMensalidade] = useState(1);
   const [pageAnuidade, setPageAnuidade] = useState(1);
-  const [valorMensalidade, setValorMensalidade] = useState(150.00);
   const [valorAnuidade, setValorAnuidade] = useState(500.00);
 
   const currentYear = new Date().getFullYear();
@@ -72,6 +78,10 @@ export default function PagamentosPage() {
   // Payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ id: string; name: string } | null>(null);
+  const [selectedCondicao, setSelectedCondicao] = useState<CondicaoMensalidade>("REGULAR");
+  const [selectedMensalidadeValor, setSelectedMensalidadeValor] = useState<number | undefined>(undefined);
+  const [selectedMensalidadeRegular, setSelectedMensalidadeRegular] = useState<number | undefined>(undefined);
+  const [paymentWarning, setPaymentWarning] = useState<string | null>(null);
   const [paymentMonth, setPaymentMonth] = useState<number>(new Date().getMonth() + 1);
   const [paymentYear, setPaymentYear] = useState<number>(currentYear);
   const [paymentValue, setPaymentValue] = useState<string>("");
@@ -103,6 +113,14 @@ export default function PagamentosPage() {
     return period.label || period.year.toString();
   };
 
+  const condicaoLabels: Record<CondicaoMensalidade, string> = {
+    REGULAR: "Regular",
+    FILIADO: "Filiado",
+    REMIDO: "Remido",
+  };
+  const getCondicaoLabel = (condicao: string | undefined) =>
+    condicaoLabels[(condicao as CondicaoMensalidade) ?? "REGULAR"];
+
   useEffect(() => {
     let mounted = true;
 
@@ -114,14 +132,13 @@ export default function PagamentosPage() {
         if (mounted) {
           setLojas(data.lojas || []);
 
-          // Buscar valores da primeira loja como padrão
+          // Buscar valores da primeira loja como padrÃ£o
           if (data.lojas && data.lojas.length > 0) {
             const firstLojaId = data.lojas[0].id;
             const lojaResponse = await fetch(`/api/lojas/${firstLojaId}/valores`);
             if (lojaResponse.ok) {
               const lojaData = await lojaResponse.json();
-              setValorMensalidade(parseFloat(lojaData.valorMensalidade) || 150.00);
-              setValorAnuidade(parseFloat(lojaData.valorAnuidade) || 500.00);
+              setValorAnuidade(parseFloat(lojaData.valorAnuidade) || 500.0);
             }
           }
         }
@@ -209,42 +226,93 @@ export default function PagamentosPage() {
 
   const stats = useMemo(() => {
     if (!gridData) {
-      return { previsto: 0, recebido: 0, emAberto: 0, adimplencia: 0 };
+      return {
+        monthlyForecast: 0,
+        annualForecast: 0,
+        recebido: 0,
+        emAberto: 0,
+        adimplencia: 0,
+      };
     }
 
-    // Calcular receita prevista baseada no tipo de pagamento
-    // Valores vêm da configuração da loja (buscados via API)
-    let previsto = 0;
-    if (activeTab === "mensalidade") {
-      // Mensalidades: membros * períodos * valor mensal
-      previsto = gridData.members.length * gridData.periods.length * valorMensalidade;
-    } else if (activeTab === "anuidade") {
-      // Anuidades: membros * períodos * valor anual
-      previsto = gridData.members.length * gridData.periods.length * valorAnuidade;
-    }
+    const mensalidadeTotal = gridData.members.reduce(
+      (total, member) => total + member.mensalidadeValor,
+      0
+    );
 
-    // Calcular receita recebida (soma de pagamentos confirmados)
-    let recebido = 0;
+    const monthlyForecast =
+      activeTab === "anuidade"
+        ? (gridData.members.length * valorAnuidade) / 12
+        : mensalidadeTotal;
+
+    const annualForecast =
+      activeTab === "anuidade"
+        ? gridData.members.length * valorAnuidade
+        : mensalidadeTotal * 12;
+
+    let receivedTotal = 0;
     gridData.members.forEach((member) => {
       gridData.periods.forEach((period) => {
         const status = gridData.statuses[`${member.id}-${period.id}`];
         if (status?.amount && status.amount > 0) {
-          recebido += status.amount;
+          receivedTotal += status.amount;
         }
       });
     });
 
-    // Calcular em aberto e adimplência
-    const emAberto = previsto - recebido;
-    const adimplencia = previsto > 0 ? (recebido / previsto) * 100 : 0;
+    const recebido = receivedTotal;
+    const adimplencia = annualForecast > 0 ? (recebido / annualForecast) * 100 : 0;
+    const periodsCount = Math.max(1, gridData.periods.length);
+    const monthlyPaid = receivedTotal / periodsCount;
+    const monthlyOpen = monthlyForecast - monthlyPaid;
+    const annualOpen = annualForecast - receivedTotal;
+
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    const currentPeriod = gridData.periods.find(
+      (period) => period.year === currentYear && period.month === currentMonth
+    );
+    const payableMembers = gridData.members.filter(
+      (member) => member.condicaoMensalidade !== "REMIDO"
+    );
+    const payableCount = payableMembers.length;
+    let pendingMembers = 0;
+    if (currentPeriod) {
+      payableMembers.forEach((member) => {
+        const status = gridData.statuses[`${member.id}-${currentPeriod.id}`];
+        if (!status?.isPaid) {
+          pendingMembers += 1;
+        }
+      });
+    }
+    const paidMembers = payableCount - pendingMembers;
+    const monthlyDelinquencyPercent =
+      payableCount > 0 ? (pendingMembers / payableCount) * 100 : 0;
 
     return {
-      previsto,
+      monthlyForecast,
+      annualForecast,
       recebido,
-      emAberto,
+      emAberto: annualOpen,
       adimplencia,
+      monthlyOpen,
+      annualOpen,
+      monthlyDelinquencyPercent,
     };
-  }, [gridData, activeTab, valorMensalidade, valorAnuidade]);
+  }, [gridData, activeTab, valorAnuidade]);
+
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   const periods = gridData?.periods ?? [];
   const mensalidadePagination = paginatedMembers(gridData?.members ?? [], pageMensalidade);
@@ -258,25 +326,61 @@ export default function PagamentosPage() {
     })),
   ];
 
-  const handleOpenPaymentModal = (memberId: string, memberName: string) => {
+  const handleOpenPaymentModal = (
+    memberId: string,
+    memberName: string,
+    condicao: CondicaoMensalidade,
+    mensalidadeValor?: number
+  ) => {
     setSelectedMember({ id: memberId, name: memberName });
+    setSelectedCondicao(condicao);
+    setSelectedMensalidadeRegular(
+      gridData?.members.find((member) => member.id === memberId)?.mensalidadeRegular ??
+        mensalidadeValor
+    );
+    setSelectedMensalidadeValor(mensalidadeValor);
     setPaymentMonth(new Date().getMonth() + 1);
     setPaymentYear(currentYear);
-    setPaymentValue("");
+    setPaymentValue(
+      mensalidadeValor !== undefined ? mensalidadeValor.toFixed(2) : ""
+    );
     setPaymentMethod("PIX");
     setShowPaymentModal(true);
+    setPaymentWarning(null);
   };
 
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
     setSelectedMember(null);
     setPaymentValue("");
+    setSelectedCondicao("REGULAR");
+    setSelectedMensalidadeValor(undefined);
+    setSelectedMensalidadeRegular(undefined);
+    setPaymentWarning(null);
   };
 
   const handleSavePayment = async () => {
     if (!selectedMember || !paymentValue || parseFloat(paymentValue) <= 0) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
+    }
+
+    const paidValue = parseFloat(paymentValue);
+    if (
+      selectedMensalidadeRegular !== undefined &&
+      Math.abs(paidValue - selectedMensalidadeRegular) > 0.009
+    ) {
+      const warningMessage = `Valor informado (${formatCurrency(
+        paidValue
+      )}) difere da mensalidade regular (${formatCurrency(
+        selectedMensalidadeRegular
+      )}). Deseja continuar com o valor informado?`;
+      setPaymentWarning(warningMessage);
+      const wantsToContinue = window.confirm(warningMessage);
+      if (!wantsToContinue) {
+        return;
+      }
+      setPaymentWarning(null);
     }
 
     setSavingPayment(true);
@@ -305,7 +409,7 @@ export default function PagamentosPage() {
       handleClosePaymentModal();
 
       // Mostrar mensagem de sucesso
-      alert("✅ Pagamento registrado com sucesso!");
+      alert("âœ… Pagamento registrado com sucesso!");
 
       // Recarregar os dados
       const loadType = activeTab === "mensalidade" ? "MONTHLY" : "ANNUAL";
@@ -325,7 +429,7 @@ export default function PagamentosPage() {
     } catch (err) {
       console.error("Erro ao salvar pagamento:", err);
       setSavingPayment(false);
-      alert("❌ " + (err instanceof Error ? err.message : "Erro ao registrar pagamento"));
+      alert("âŒ " + (err instanceof Error ? err.message : "Erro ao registrar pagamento"));
     }
   };
 
@@ -359,7 +463,7 @@ export default function PagamentosPage() {
     <div className="container mx-auto py-6 px-4 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestao de Pagamentos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Pagamentos</h1>
           <p className="text-muted-foreground mt-1">
             Controle de mensalidades, anuidades e eventos
           </p>
@@ -394,6 +498,7 @@ export default function PagamentosPage() {
                     <TableHeader className="bg-[#3b4d3b] text-white">
                       <TableRow>
                         <TableHead className="text-white">Membro</TableHead>
+                        <TableHead className="text-center text-white">Condição</TableHead>
                         {periods.map((period) => (
                           <TableHead key={period.id} className="text-center text-white">
                             {formatPeriodLabel(period)}
@@ -412,10 +517,18 @@ export default function PagamentosPage() {
                         }, 0);
 
                         return (
-                          <TableRow key={member.id} className={index % 2 === 0 ? "bg-white" : "bg-[#f1fffb]"}>
-                            <TableCell className="font-medium">
-                              {truncateName(toTitleCase(member.nomeCompleto))}
-                            </TableCell>
+                            <TableRow key={member.id} className={index % 2 === 0 ? "bg-white" : "bg-[#f1fffb]"}>
+                              <TableCell className="font-medium">
+                                {truncateName(toTitleCase(member.nomeCompleto))}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <div className="text-sm font-semibold">
+                                  {getCondicaoLabel(member.condicaoMensalidade)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {formatCurrency(member.mensalidadeValor)}
+                                </div>
+                              </TableCell>
                             {periods.map((period) => {
                               const status = gridData.statuses[`${member.id}-${period.id}`];
                               const amount = status?.amount ?? 0;
@@ -430,7 +543,14 @@ export default function PagamentosPage() {
                             <TableCell className="text-center">
                               <button
                                 type="button"
-                                onClick={() => handleOpenPaymentModal(member.id, member.nomeCompleto)}
+                                onClick={() =>
+                                  handleOpenPaymentModal(
+                                    member.id,
+                                    member.nomeCompleto,
+                                    member.condicaoMensalidade as CondicaoMensalidade,
+                                    member.mensalidadeValor
+                                  )
+                                }
                                 className="inline-flex h-8 items-center justify-center rounded-md bg-green-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700"
                                 title="Registrar pagamento"
                               >
@@ -442,7 +562,7 @@ export default function PagamentosPage() {
                                 <button
                                   type="button"
                                   className="inline-flex h-8 items-center gap-1 justify-center rounded-md border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
-                                  title="Ver histórico de pagamentos"
+                                  title="Ver histÃ³rico de pagamentos"
                                 >
                                   <History className="h-3 w-3" />
                                   Histórico
@@ -456,6 +576,7 @@ export default function PagamentosPage() {
                     <TableFooter className="bg-[#2d3d2d]">
                       <TableRow>
                         <TableCell className="font-bold text-white">TOTAL DO ANO</TableCell>
+                        <TableCell className="text-center text-white"></TableCell>
                         {periods.map((period) => {
                           const totalPeriodo = mensalidadePagination.slice.reduce((acc, member) => {
                             const status = gridData.statuses[`${member.id}-${period.id}`];
@@ -485,7 +606,7 @@ export default function PagamentosPage() {
                   </Table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Nenhum dado disponivel</p>
+                <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
               )}
               {gridData && (
                 <div className="mt-4 flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground md:flex-row">
@@ -535,6 +656,7 @@ export default function PagamentosPage() {
                     <TableHeader className="bg-[#3b4d3b] text-white">
                       <TableRow>
                         <TableHead className="text-white">Membro</TableHead>
+                        <TableHead className="text-center text-white">Condição</TableHead>
                         {periods.map((period) => (
                           <TableHead key={period.id} className="text-center text-white">
                             {formatPeriodLabel(period)}
@@ -557,6 +679,14 @@ export default function PagamentosPage() {
                             <TableCell className="font-medium">
                               {truncateName(toTitleCase(member.nomeCompleto))}
                             </TableCell>
+                            <TableCell className="text-center">
+                              <div className="text-sm font-semibold">
+                                {getCondicaoLabel(member.condicaoMensalidade)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatCurrency(member.mensalidadeValor)}
+                              </div>
+                            </TableCell>
                             {periods.map((period) => {
                               const status = gridData.statuses[`${member.id}-${period.id}`];
                               const amount = status?.amount ?? 0;
@@ -571,7 +701,14 @@ export default function PagamentosPage() {
                             <TableCell className="text-center">
                               <button
                                 type="button"
-                                onClick={() => handleOpenPaymentModal(member.id, member.nomeCompleto)}
+                                onClick={() =>
+                                  handleOpenPaymentModal(
+                                    member.id,
+                                    member.nomeCompleto,
+                                    member.condicaoMensalidade as CondicaoMensalidade,
+                                    member.mensalidadeValor
+                                  )
+                                }
                                 className="inline-flex h-8 items-center justify-center rounded-md bg-green-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700"
                                 title="Registrar pagamento"
                               >
@@ -583,10 +720,10 @@ export default function PagamentosPage() {
                                 <button
                                   type="button"
                                   className="inline-flex h-8 items-center gap-1 justify-center rounded-md border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
-                                  title="Ver histórico de pagamentos"
+                                  title="Ver histÃ³rico de pagamentos"
                                 >
                                   <History className="h-3 w-3" />
-                                  Histórico
+                                  HistÃ³rico
                                 </button>
                               </Link>
                             </TableCell>
@@ -597,6 +734,7 @@ export default function PagamentosPage() {
                     <TableFooter className="bg-[#2d3d2d]">
                       <TableRow>
                         <TableCell className="font-bold text-white">TOTAL DO PERÍODO</TableCell>
+                        <TableCell className="text-center text-white"></TableCell>
                         {periods.map((period) => {
                           const totalPeriodo = anuidadePagination.slice.reduce((acc, member) => {
                             const status = gridData.statuses[`${member.id}-${period.id}`];
@@ -687,10 +825,34 @@ export default function PagamentosPage() {
             </div>
 
             <div className="p-6 space-y-4">
+              {selectedMember && (
+                <div className="gap-1 rounded-md border border-border bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Condição da mensalidade
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {getCondicaoLabel(selectedCondicao)} â€“{" "}
+                    {selectedMensalidadeValor !== undefined
+                      ? formatCurrency(selectedMensalidadeValor)
+                      : "Valor nÃ£o definido"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Mensalidade regular esperada:{" "}
+                    {selectedMensalidadeRegular
+                      ? formatCurrency(selectedMensalidadeRegular)
+                      : "â€“"}
+                  </p>
+                </div>
+              )}
+              {paymentWarning && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  {paymentWarning}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="paymentMonth" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mês
+                    MÃªs
                   </label>
                   <select
                     id="paymentMonth"
@@ -730,7 +892,10 @@ export default function PagamentosPage() {
                   type="number"
                   id="paymentValue"
                   value={paymentValue}
-                  onChange={(e) => setPaymentValue(e.target.value)}
+                  onChange={(e) => {
+                    setPaymentValue(e.target.value);
+                    setPaymentWarning(null);
+                  }}
                   step="0.01"
                   min="0"
                   placeholder="0,00"
@@ -781,3 +946,4 @@ export default function PagamentosPage() {
     </div>
   );
 }
+

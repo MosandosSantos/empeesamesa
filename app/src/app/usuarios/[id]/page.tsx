@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { use } from "react";
 
 interface Loja {
   id: string;
@@ -32,10 +31,16 @@ interface User {
 
 const ROLES = [
   { value: "MEMBER", label: "Membro" },
-  { value: "FINANCE", label: "Financeiro" },
-  { value: "SECRETARY", label: "Secretário" },
-  { value: "LODGE_ADMIN", label: "Administrador da Loja" },
+  { value: "TESOUREIRO", label: "Tesoureiro" },
+  { value: "SECRETARIO_LOJA", label: "Secretário da Loja" },
+  { value: "ADMIN_LOJA", label: "Administrador da Loja" },
+  { value: "ADMIN_POT", label: "Administrador de Prefeitura" },
+  { value: "ADMIN_SAAS", label: "Administrador do SaaS" },
   { value: "SYS_ADMIN", label: "Administrador do Sistema" },
+  { value: "FINANCE", label: "Financeiro (legado)" },
+  { value: "SECRETARY", label: "Secretário (legado)" },
+  { value: "LODGE_ADMIN", label: "Administrador da Loja (legado)" },
+  { value: "ADMIN", label: "Administrador (legado)" },
 ];
 
 const STATUSES = [
@@ -62,11 +67,7 @@ export default function EditarUsuarioPage({
     status: "INVITED",
   });
 
-  useEffect(() => {
-    loadData();
-  }, [resolvedParams.id]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoadingData(true);
 
@@ -98,7 +99,11 @@ export default function EditarUsuarioPage({
     } finally {
       setLoadingData(false);
     }
-  }
+  }, [resolvedParams.id, router]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -123,9 +128,10 @@ export default function EditarUsuarioPage({
 
       alert("Usuário atualizado com sucesso!");
       router.push("/usuarios");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao atualizar usuário:", error);
-      alert(error.message || "Erro ao atualizar usuário");
+      const message = error instanceof Error ? error.message : "Erro ao atualizar usuário";
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -263,3 +269,4 @@ export default function EditarUsuarioPage({
     </div>
   );
 }
+

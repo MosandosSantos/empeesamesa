@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, DollarSign, Calendar, Building2, Receipt, CreditCard, Banknote, TrendingUp, CheckCircle2, Loader2 } from "lucide-react";
 import { CurrencyDisplay } from "@/components/financeiro/currency-display";
 import { FormaPagamento } from "@/types/financeiro";
+import { canAccessFinance } from "@/lib/roles";
 
 interface Categoria {
   id: string;
@@ -56,6 +57,7 @@ export default function PagamentosMembro({ params }: { params: Promise<{ id: str
   const returnTo = searchParams.get("returnTo") || "/membros";
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [authError, setAuthError] = useState("");
   const [member, setMember] = useState<Member | null>(null);
   const [payments, setPayments] = useState<MemberPayment[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -76,10 +78,37 @@ export default function PagamentosMembro({ params }: { params: Promise<{ id: str
   });
 
   useEffect(() => {
-    fetchMember();
-    fetchPayments();
-    fetchCategorias();
+    const loadRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setAuthError("N\u00e3o autorizado.");
+          setLoadingData(false);
+          return;
+        }
+        const data = await response.json();
+        const userRole = data?.user?.role ?? null;
+        if (!canAccessFinance(userRole)) {
+          setAuthError("Voc\u00ea n\u00e3o tem permiss\u00e3o para acessar pagamentos.");
+          setLoadingData(false);
+          return;
+        }
+
+        fetchMember();
+        fetchPayments();
+        fetchCategorias();
+      } catch {
+        setAuthError("N\u00e3o foi poss\u00edvel validar a permiss\u00e3o.");
+        setLoadingData(false);
+      }
+    };
+
+    loadRole();
   }, []);
+
+  if (authError) {
+    return <p className="text-sm text-red-600">{authError}</p>;
+  }
 
   useEffect(() => {
     // Auto-generate description based on payment type
@@ -219,7 +248,7 @@ export default function PagamentosMembro({ params }: { params: Promise<{ id: str
   const getPaymentMethodName = (method: string) => {
     const names: Record<string, string> = {
       PIX: "PIX",
-      TRANSFERENCIA: "Transferência",
+      TRANSFERENCIA: "Transfer\u00eancia",
       DINHEIRO: "Dinheiro",
       BOLETO: "Boleto",
     };
@@ -595,7 +624,7 @@ export default function PagamentosMembro({ params }: { params: Promise<{ id: str
                             <SelectItem value={FormaPagamento.TRANSFERENCIA}>
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4" />
-                                Transferência
+                                Transfer\u00eancia
                               </div>
                             </SelectItem>
                             <SelectItem value={FormaPagamento.DINHEIRO}>
@@ -753,3 +782,5 @@ export default function PagamentosMembro({ params }: { params: Promise<{ id: str
     </div>
   );
 }
+
+

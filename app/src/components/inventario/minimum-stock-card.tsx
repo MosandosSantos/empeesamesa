@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, Package } from "lucide-react";
 
 type MinimumStockCardProps = {
   title: string;
@@ -23,8 +23,13 @@ export function MinimumStockCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-emerald-900">{title}</CardTitle>
+        <CardDescription className="text-emerald-700/80">{description}</CardDescription>
+        <CardAction>
+          <div className="rounded-lg bg-muted p-3 text-emerald-700 shadow-sm">
+            <Package className="h-5 w-5" />
+          </div>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold">

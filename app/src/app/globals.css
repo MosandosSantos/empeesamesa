@@ -98,6 +98,13 @@
   --rer-red-foreground: oklch(0.98 0 0);
 
   /* Login Button Color - Terracotta/Brick Red (Masonic theme) */
+  /* SAL Color Tokens */
+  --sal-emerald: oklch(0.47 0.16 145);
+  --sal-emerald-soft: oklch(0.93 0.06 145);
+  --sal-gold: oklch(0.78 0.15 85);
+  --sal-copper: oklch(0.62 0.13 38);
+  --sal-ink: oklch(0.22 0.03 145);
+
   /* Terracota clara - tom de telha e cerâmica */
   --login-button: oklch(0.62 0.13 38);
   --login-button-foreground: oklch(0.98 0 0);
@@ -139,11 +146,38 @@
 
   /* RER Color Tokens (Dark Mode) */
   --rer-green: oklch(0.5 0.16 145);
+  /* SAL Color Tokens (Dark Mode) */
+  --sal-emerald: oklch(0.56 0.17 145);
+  --sal-emerald-soft: oklch(0.22 0.03 145);
+  --sal-gold: oklch(0.82 0.15 85);
+  --sal-copper: oklch(0.68 0.14 38);
+  --sal-ink: oklch(0.92 0.01 145);
+
   --rer-green-foreground: oklch(0.98 0 0);
   --rer-gold: oklch(0.78 0.15 85);
   --rer-gold-foreground: oklch(0.15 0 0);
   --rer-red: oklch(0.6 0.23 25);
   --rer-red-foreground: oklch(0.98 0 0);
+@keyframes sal-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sal-soft-glow {
+  0% {
+    box-shadow: 0 10px 30px -20px oklch(0.72 0.11 145 / 35%);
+  }
+  100% {
+    box-shadow: 0 20px 40px -24px oklch(0.78 0.14 85 / 40%);
+  }
+}
+
 
   /* Login Button Color - Dark Mode (Terracotta) */
   --login-button: oklch(0.64 0.14 38);
@@ -152,6 +186,28 @@
 }
 
 @layer base {
+  .sal-surface {
+    background-image:
+      radial-gradient(circle at 12% 8%, oklch(0.78 0.14 85 / 18%) 0%, transparent 45%),
+      radial-gradient(circle at 88% 12%, oklch(0.47 0.16 145 / 20%) 0%, transparent 40%);
+  }
+
+  .sal-stagger > * {
+    animation: sal-fade-up 600ms ease-out both;
+  }
+  .sal-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .sal-stagger > *:nth-child(2) { animation-delay: 70ms; }
+  .sal-stagger > *:nth-child(3) { animation-delay: 140ms; }
+  .sal-stagger > *:nth-child(4) { animation-delay: 210ms; }
+  .sal-stagger > *:nth-child(5) { animation-delay: 280ms; }
+  .sal-stagger > *:nth-child(6) { animation-delay: 350ms; }
+  .sal-stagger > *:nth-child(7) { animation-delay: 420ms; }
+  .sal-stagger > *:nth-child(8) { animation-delay: 490ms; }
+
+  .sal-card-glow {
+    animation: sal-soft-glow 1200ms ease-out both;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

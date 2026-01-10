@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/api-auth';
+import { authenticateRequest, getUserFromPayload } from '@/lib/api-auth';
 import prisma from '@/lib/prisma';
+import { isSaasAdmin } from '@/lib/roles';
 import { updateUserSchema } from '@/lib/validations/user';
 
 interface RouteParams {

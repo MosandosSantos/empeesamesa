@@ -1,16 +1,26 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/server-auth";
 import { LojaForm } from "./loja-form";
 
 async function createLoja(_: { error: string | null }, formData: FormData) {
   "use server";
 
-  const tenantName = formData.get("tenantName")?.toString()?.trim();
+  const user = await getCurrentUser();
+  if (!user) {
+    return { error: "Usuario nao autenticado." };
+  }
+
+  const isSysAdmin = user.role === "SYS_ADMIN";
+  if (user.role === "ADMIN_SAAS") {
+    return { error: "Administrador do SaaS nao pode cadastrar lojas." };
+  }
+
   const lojaMX = formData.get("lojaMX")?.toString()?.trim();
+  const shortName = formData.get("shortName")?.toString()?.trim();
   const numeroRaw = formData.get("numero")?.toString();
   const contractNumber = formData.get("contractNumber")?.toString()?.trim();
-  const potenciaId = formData.get("potenciaId")?.toString()?.trim();
   const ritoId = formData.get("ritoId")?.toString()?.trim();
   const mensalidadeAtivaRaw = formData.get("mensalidadeAtiva")?.toString();
   const mensalidadeVencimentoDiaRaw = formData.get("mensalidadeVencimentoDia")?.toString();
@@ -30,6 +40,9 @@ async function createLoja(_: { error: string | null }, formData: FormData) {
   const nomeFantasia = formData.get("nomeFantasia")?.toString()?.trim();
   const dataAberturaRaw = formData.get("dataAbertura")?.toString();
   const valorMensalidadeRaw = formData.get("valorMensalidade")?.toString();
+  const mensalidadeRegularRaw = formData.get("mensalidadeRegular")?.toString();
+  const mensalidadeFiliadoRaw = formData.get("mensalidadeFiliado")?.toString();
+  const mensalidadeRemidoRaw = formData.get("mensalidadeRemido")?.toString();
 
   // Dados bancários
   const bancoCodigo = formData.get("bancoCodigo")?.toString()?.trim();
@@ -44,8 +57,29 @@ async function createLoja(_: { error: string | null }, formData: FormData) {
   // Observações
   const observacoes = formData.get("observacoes")?.toString()?.trim();
 
-  if (!tenantName || !lojaMX || !contractNumber || !contatoNome || !telefone || !potenciaId) {
-    return { error: "Campos obrigatórios: nome do tenant, nome da loja, contrato, potência, responsável e telefone." };
+    if (!lojaMX || !shortName || !contractNumber || !contatoNome || !telefone) {
+    return { error: "Campos obrigatorios: nome da loja, nome curto, contrato, responsavel e telefone." };
+  }
+
+  const existingShortName = await prisma.loja.findFirst({
+    where: { shortName: { equals: shortName, mode: "insensitive" } },
+    select: { id: true },
+  });
+
+  if (existingShortName) {
+    return { error: "Nome curto ja existe. Escolha outro nome." };
+  }
+
+  const existingTenant = await prisma.tenant.findFirst({
+    where: {
+      name: { equals: shortName, mode: "insensitive" },
+      ...(isSysAdmin ? {} : { id: { not: user.tenantId } }),
+    },
+    select: { id: true },
+  });
+
+  if (existingTenant) {
+    return { error: "Tenant ja existe. Escolha outro nome curto." };
   }
 
   if (!valorMensalidadeRaw) {
@@ -64,17 +98,45 @@ async function createLoja(_: { error: string | null }, formData: FormData) {
     }
   }
 
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: tenantName,
-    },
-  });
+  let tenantId = user.tenantId;
+  if (!isSysAdmin) {
+    await prisma.tenant.update({
+      where: { id: user.tenantId },
+      data: { name: shortName! },
+    });
+  }
+  if (isSysAdmin) {
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: shortName!,
+      },
+    });
+    tenantId = tenant.id;
+  }
 
+  const potencia = user.potenciaId
+    ? await prisma.potencia.findFirst({
+        where: { id: user.potenciaId, tenantId: user.tenantId },
+        select: { id: true },
+      })
+    : await prisma.potencia.findFirst({
+        where: { tenantId },
+        orderBy: { nome: "asc" },
+        select: { id: true },
+      });
+
+  if (!potencia) {
+    return {
+      error: "Nenhuma prefeitura encontrada para este tenant. Cadastre a prefeitura antes de criar a loja.",
+    };
+  }
+
+  const baseMensalidade = parseFloat(valorMensalidadeRaw!);
 
   await prisma.loja.create({
     data: {
-      tenantId: tenant.id,
-      potenciaId,
+      tenantId,
+      potenciaId: potencia.id,
       ritoId: ritoId || null,
       lojaMX,
       numero: numeroRaw ? Number(numeroRaw) : null,
@@ -86,7 +148,16 @@ async function createLoja(_: { error: string | null }, formData: FormData) {
       contractNumber,
       mensalidadeAtiva: mensalidadeAtivaRaw === "on" || mensalidadeAtivaRaw === "true",
       mensalidadeVencimentoDia: mensalidadeVencimentoDiaRaw ? parseInt(mensalidadeVencimentoDiaRaw) : null,
-      valorMensalidade: parseFloat(valorMensalidadeRaw!),
+      valorMensalidade: baseMensalidade,
+      mensalidadeRegular: mensalidadeRegularRaw
+        ? parseFloat(mensalidadeRegularRaw)
+        : baseMensalidade,
+      mensalidadeFiliado: mensalidadeFiliadoRaw
+        ? parseFloat(mensalidadeFiliadoRaw)
+        : baseMensalidade,
+      mensalidadeRemido: mensalidadeRemidoRaw
+        ? parseFloat(mensalidadeRemidoRaw)
+        : baseMensalidade,
       situacao: "ATIVA",
       enderecoCep: enderecoCep || null,
       enderecoLogradouro: enderecoLogradouro || null,
@@ -117,14 +188,24 @@ async function createLoja(_: { error: string | null }, formData: FormData) {
 }
 
 export default async function NovaLojaPage() {
-  const potencias = await prisma.potencia.findMany({
-    select: {
-      id: true,
-      nome: true,
-      sigla: true,
-    },
-    orderBy: [{ nome: "asc" }],
-  });
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role === "ADMIN_SAAS") {
+    redirect("/admin/lojas");
+  }
+
+  const potencia = user.potenciaId
+    ? await prisma.potencia.findFirst({
+        where: { id: user.potenciaId, tenantId: user.tenantId },
+        select: { nome: true, sigla: true },
+      })
+    : await prisma.potencia.findFirst({
+        where: { tenantId: user.tenantId },
+        orderBy: { nome: "asc" },
+        select: { nome: true, sigla: true },
+      });
 
   const ritos = await prisma.rito.findMany({
     select: {
@@ -150,7 +231,17 @@ export default async function NovaLojaPage() {
         </div>
       </div>
 
-      <LojaForm action={createLoja} potencias={potencias} ritos={ritos} />
+      {potencia ? (
+        <LojaForm
+          action={createLoja}
+          potenciaLabel={potencia.sigla ? `${potencia.sigla} - ${potencia.nome}` : potencia.nome}
+          ritos={ritos}
+        />
+      ) : (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Nenhuma prefeitura encontrada para este tenant. Cadastre a prefeitura antes de criar a loja.
+        </div>
+      )}
     </div>
   );
 }

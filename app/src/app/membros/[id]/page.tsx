@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/server-auth";
+import { canViewMembers, isLojaAdmin, isSecretaria, isTesouraria } from "@/lib/roles";
 import { ArrowLeft, User } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -38,16 +38,26 @@ export default async function MembroDetalhePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth-token")?.value ?? null;
-  const payload = token ? await verifyToken(token) : null;
-
-  if (!payload) {
+  const user = await getCurrentUser();
+  if (!user) {
     redirect("/login");
   }
 
+  if (!canViewMembers(user.role)) {
+    redirect("/membros");
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isSecretaria(user.role) || isTesouraria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    redirect("/membros");
+  }
+
   const member = await prisma.member.findUnique({
-    where: { id, tenantId: payload.tenantId },
+    where: {
+      id,
+      tenantId: user.tenantId,
+      ...(needsLojaRestriction ? { lojaId: user.lojaId } : {}),
+    },
   });
 
   if (!member) {
@@ -86,22 +96,22 @@ export default async function MembroDetalhePage({
         </Link>
       </div>
 
-      {/* Conteúdo */}
+      {/* Conte\u00fado */}
       <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm">
-        <Section title="Identificação" icon={<User size={18} />}>
+        <Section title={"Identifica\u00e7\u00e3o"} icon={<User size={18} />}>
           <Field label="Nome completo" value={member.nomeCompleto} />
           <Field label="CPF" value={member.cpf} />
-          <Field label="Situação" value={member.situacao} />
+          <Field label={"Situa\u00e7\u00e3o"} value={member.situacao} />
           <Field label="Classe Atual" value={getClasseLabel(member.class)} />
-          <Field label="Número de Filiado" value={member.numeroFiliado} />
-          <Field label="Tipo de Admissão" value={member.tipoAdmissao} />
-          <Field label="Data de Admissão" value={fmtDate(member.dataAdmissao)} />
+          <Field label={"Cadastro Maçônico"} value={member.numeroFiliado} />
+          <Field label={"Tipo de Admiss\u00e3o"} value={member.tipoAdmissao} />
+          <Field label={"Data de Admiss\u00e3o"} value={fmtDate(member.dataAdmissao)} />
           <Field label="Escolaridade" value={member.escolaridade} />
         </Section>
 
         <Divider />
 
-        <Section title="Progressão nos Graus Maçônicos">
+        <Section title={"Progress\u00e3o nos Graus Ma\u00e7\u00f4nicos"}>
           <Field
             label="Data AP (Aprendiz)"
             value={fmtDate(member.dataAP)}
@@ -127,34 +137,36 @@ export default async function MembroDetalhePage({
           <Field label="Nacionalidade" value={member.nacionalidade} />
           <Field
             label="Naturalidade"
-            value={`${member.naturalCidade} - ${member.naturalUf}`}
+            value={member.naturalCidade}
           />
           <Field label="Estado Civil" value={member.estadoCivil} />
           <Field label="Nome do Pai" value={member.pai} />
-          <Field label="Nome da Mãe" value={member.mae} />
+          <Field label={"Nome da M\u00e3e"} value={member.mae} />
         </Section>
 
         <Divider />
 
         <Section title="Documentos">
           <Field label="RG / Identidade" value={member.identidadeNumero} />
-          <Field label="Órgão Emissor" value={member.orgaoEmissor} />
-          <Field label="Data de Emissão" value={fmtDate(member.dataEmissao)} />
+          <Field label={"\u00d3rg\u00e3o Emissor"} value={member.orgaoEmissor} />
+          <Field label={"Data de Emiss\u00e3o"} value={fmtDate(member.dataEmissao)} />
           <Field label="CPF" value={member.cpf} />
         </Section>
 
         <Divider />
 
         <Section title="Contato">
-          <Field label="Email" value={member.email} />
+          <Field label="E-mail" value={member.email} />
           <Field label="Celular" value={member.celular} />
-          <Field label="Telefone de Urgência" value={member.telefoneUrgencia} />
+          <Field label={"Telefone de Urg\u00eancia"} value={member.telefoneUrgencia} />
         </Section>
 
         <Divider />
 
-        <Section title="Endereço">
+        <Section title={"Endere\u00e7o"}>
           <Field label="Logradouro" value={member.enderecoLogradouro} />
+          <Field label={"N\u00famero"} value={member.enderecoNumero} />
+          <Field label="Complemento" value={member.enderecoComplemento} />
           <Field label="Bairro" value={member.enderecoBairro} />
           <Field
             label="Cidade / UF"
@@ -165,25 +177,12 @@ export default async function MembroDetalhePage({
 
         <Divider />
 
-        <Section title="Informações Ritualísticas" cols={2}>
+        <Section title={"Informa\u00e7\u00f5es Ritual\u00edsticas"} cols={2}>
           {/* Linha 1 */}
-          <Field
-            label="Loja Atual"
-            value={
-              member.lojaAtualNome
-                ? `${member.lojaAtualNome} ${member.lojaAtualNumero ? `Nº ${member.lojaAtualNumero}` : ""}`
-                : "-"
-            }
-          />
-          <Field
-            label="Data de Entrada"
-            value={fmtDate(member.dataEntradaLojaAtual)}
-          />
 
           {/* Linha 2 */}
-          <Field label="Rito" value={member.rito} />
           <Field
-            label="Loja de Iniciação"
+            label={"Loja de Inicia\u00e7\u00e3o"}
             value={
               member.lojaIniciacaoNome
                 ? `${member.lojaIniciacaoNome} ${member.lojaIniciacaoNumero ? `Nº ${member.lojaIniciacaoNumero}` : ""}`
@@ -207,11 +206,11 @@ export default async function MembroDetalhePage({
 
           {/* Linha 4 */}
           <Field
-            label="Data de Elevação"
+            label={"Data de Eleva\u00e7\u00e3o"}
             value={fmtDate(member.dataElevacao)}
           />
           <Field
-            label="Loja de Elevação"
+            label={"Loja de Eleva\u00e7\u00e3o"}
             value={
               member.lojaElevacaoNome
                 ? `${member.lojaElevacaoNome} ${member.lojaElevacaoNumero ? `Nº ${member.lojaElevacaoNumero}` : ""}`
@@ -221,11 +220,11 @@ export default async function MembroDetalhePage({
 
           {/* Linha 5 */}
           <Field
-            label="Data de Instalação"
+            label={"Data de Instala\u00e7\u00e3o"}
             value={fmtDate(member.dataInstalacao)}
           />
           <Field
-            label="Loja de Instalação"
+            label={"Loja de Instala\u00e7\u00e3o"}
             value={
               member.lojaInstalacaoNome
                 ? `${member.lojaInstalacaoNome} ${member.lojaInstalacaoNumero ? `Nº ${member.lojaInstalacaoNumero}` : ""}`
@@ -278,3 +277,5 @@ function Field({ label, value }: { label: string; value: string | null }) {
 function Divider() {
   return <div className="border-t border-border" />;
 }
+
+

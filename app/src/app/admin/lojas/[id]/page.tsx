@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import prisma from "@/lib/prisma";
 import { ArrowLeft, Store, Edit, Trash2 } from "lucide-react";
+import { getCurrentUser } from "@/lib/server-auth";
+import { isLojaAdmin, isPotAdmin, isSysAdmin } from "@/lib/roles";
 
 function fmtDate(value: Date | null | undefined) {
   if (!value) return "-";
@@ -34,6 +37,9 @@ export default async function LojaDetalhePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const user = await getCurrentUser();
+  const canEdit = user ? isSysAdmin(user.role) || isLojaAdmin(user.role) || isPotAdmin(user.role) : false;
+  const canDelete = user ? isSysAdmin(user.role) || isLojaAdmin(user.role) || isPotAdmin(user.role) : false;
 
   const loja = await prisma.loja.findUnique({
     where: { id },
@@ -76,7 +82,6 @@ export default async function LojaDetalhePage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -104,20 +109,28 @@ export default async function LojaDetalhePage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/admin/lojas/${loja.id}/editar`}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted hover:shadow-md"
-          >
-            <Edit size={16} />
-            Editar
-          </Link>
-          <Link
-            href={`/admin/lojas/${loja.id}/excluir`}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-red-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-50 hover:shadow-md"
-          >
-            <Trash2 size={16} />
-            Excluir
-          </Link>
+          {(canEdit || canDelete) && (
+            <>
+              {canEdit && (
+                <Link
+                  href={`/admin/lojas/${loja.id}/editar`}
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted hover:shadow-md"
+                >
+                  <Edit size={16} />
+                  Editar
+                </Link>
+              )}
+              {canDelete && (
+                <Link
+                  href={`/admin/lojas/${loja.id}/excluir`}
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-red-200 bg-white px-3 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-50 hover:shadow-md"
+                >
+                  <Trash2 size={16} />
+                  Excluir
+                </Link>
+              )}
+            </>
+          )}
           <Link
             href="/admin/lojas"
             className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-white px-3 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted hover:shadow-md"
@@ -128,7 +141,6 @@ export default async function LojaDetalhePage({
         </div>
       </div>
 
-      {/* Conteúdo */}
       <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm">
         <Section title="Informações Gerais" icon={<Store size={18} />}>
           <Field label="Nome da Loja MX" value={loja.lojaMX} />
@@ -137,7 +149,7 @@ export default async function LojaDetalhePage({
           <Field label="Situação" value={loja.situacao} />
           <Field label="Data de Fundação" value={fmtDate(loja.dataFundacao)} />
           <Field
-            label="Potência"
+            label="Prefeitura"
             value={
               loja.potencia.sigla
                 ? `${loja.potencia.sigla} - ${loja.potencia.nome}`
@@ -161,19 +173,16 @@ export default async function LojaDetalhePage({
             label="Dia de Vencimento da Mensalidade"
             value={loja.mensalidadeVencimentoDia ? `Dia ${loja.mensalidadeVencimentoDia}` : "-"}
           />
-          <Field
-            label="Tenant Criado em"
-            value={fmtDate(loja.tenant.createdAt)}
-          />
+          <Field label="Tenant Criado em" value={fmtDate(loja.tenant.createdAt)} />
         </Section>
 
         <Divider />
 
         <Section title="Contato">
           <Field label="Nome do Contato" value={loja.contatoNome} />
-          <Field label="Email" value={loja.email} />
+          <Field label="E-mail" value={loja.email} />
           <Field label="Telefone" value={loja.telefone} />
-          <Field label="Website" value={loja.website} />
+          <Field label="Site" value={loja.website} />
         </Section>
 
         <Divider />
@@ -197,16 +206,10 @@ export default async function LojaDetalhePage({
         <Divider />
 
         <Section title="Estatísticas">
+          <Field label="Total de Membros" value={loja._count.members.toString()} />
+          <Field label="Total de Sessões" value={loja._count.meetings.toString()} />
           <Field
-            label="Total de Membros"
-            value={loja._count.members.toString()}
-          />
-          <Field
-            label="Total de Sessões"
-            value={loja._count.meetings.toString()}
-          />
-          <Field
-            label="Localização da Potência"
+            label="Localização da Prefeitura"
             value={
               loja.potencia.enderecoCidade && loja.potencia.enderecoUf
                 ? `${loja.potencia.enderecoCidade} - ${loja.potencia.enderecoUf}`
@@ -220,16 +223,13 @@ export default async function LojaDetalhePage({
             <Divider />
             <Section title="Observações">
               <div className="col-span-full rounded-md border border-border bg-background px-4 py-3">
-                <p className="whitespace-pre-wrap text-sm text-foreground">
-                  {loja.observacoes}
-                </p>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{loja.observacoes}</p>
               </div>
             </Section>
           </>
         )}
       </div>
 
-      {/* Ações Rápidas */}
       <div className="flex items-center gap-3">
         <Link
           href={`/membros?lojaId=${loja.id}`}
@@ -250,19 +250,21 @@ export default async function LojaDetalhePage({
 
 function Section({
   title,
-  children,
   icon,
-  cols,
+  cols = 3,
+  children,
 }: {
   title: string;
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-  cols?: 2 | 3;
+  icon?: ReactNode;
+  cols?: number;
+  children: ReactNode;
 }) {
   const gridClass =
-    cols === 2
-      ? "grid gap-3 md:grid-cols-2"
-      : "grid gap-3 md:grid-cols-2 lg:grid-cols-3";
+    cols === 1
+      ? "grid gap-3"
+      : cols === 2
+        ? "grid gap-3 md:grid-cols-2"
+        : "grid gap-3 md:grid-cols-2 lg:grid-cols-3";
 
   return (
     <div className="space-y-3">

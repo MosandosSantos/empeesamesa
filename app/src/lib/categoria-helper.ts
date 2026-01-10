@@ -35,7 +35,8 @@ type TransactionClient = Omit<
 export async function findOrCreateCategoria(
   tenantId: string,
   categoryName: string,
-  tx?: TransactionClient
+  tx?: TransactionClient,
+  tipo: "RECEITA" | "DESPESA" = "RECEITA"
 ): Promise<string> {
   // Use transaction client if provided, otherwise use standalone prisma client
   const client = tx ?? prisma;
@@ -45,9 +46,10 @@ export async function findOrCreateCategoria(
     // Using the unique constraint on [tenantId, nome]
     const existingCategoria = await client.categoria.findUnique({
       where: {
-        tenantId_nome: {
+        tenantId_nome_tipo: {
           tenantId,
           nome: categoryName,
+          tipo,
         },
       },
       select: {
@@ -65,6 +67,7 @@ export async function findOrCreateCategoria(
       data: {
         tenantId,
         nome: categoryName,
+        tipo,
       },
       select: {
         id: true,
@@ -78,9 +81,10 @@ export async function findOrCreateCategoria(
     if (error instanceof Error && error.message.includes("Unique constraint")) {
       const categoria = await client.categoria.findUnique({
         where: {
-          tenantId_nome: {
+          tenantId_nome_tipo: {
             tenantId,
             nome: categoryName,
+            tipo,
           },
         },
         select: {
@@ -115,13 +119,14 @@ export async function findOrCreateCategoria(
  */
 export async function findOrCreateMultipleCategories(
   tenantId: string,
-  categoryNames: string[]
+  categoryNames: string[],
+  tipo: "RECEITA" | "DESPESA" = "RECEITA"
 ): Promise<Record<string, string>> {
   const result: Record<string, string> = {};
 
   // Process each category sequentially to avoid race conditions
   for (const name of categoryNames) {
-    const id = await findOrCreateCategoria(tenantId, name);
+    const id = await findOrCreateCategoria(tenantId, name, undefined, tipo);
     result[name] = id;
   }
 

@@ -12,7 +12,18 @@ export interface CreateUserAndInviteParams {
   email: string;
   tenantId: string;
   lojaId?: string | null;
-  role?: "SYS_ADMIN" | "LODGE_ADMIN" | "SECRETARY" | "FINANCE" | "MEMBER";
+  role?:
+    | "SYS_ADMIN"
+    | "ADMIN_SAAS"
+    | "ADMIN_POT"
+    | "ADMIN_LOJA"
+    | "SECRETARIO_LOJA"
+    | "TESOUREIRO"
+    | "LODGE_ADMIN"
+    | "SECRETARY"
+    | "FINANCE"
+    | "ADMIN"
+    | "MEMBER";
   createdByUserId?: string;
   userName?: string; // Nome para o email de boas-vindas
 }

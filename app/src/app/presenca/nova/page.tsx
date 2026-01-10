@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { canAccessPresence } from "@/lib/roles";
 
 export default function NovaSessaoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     dataSessao: "",
@@ -17,6 +19,31 @@ export default function NovaSessaoPage() {
     descricao: "",
     observacoes: "",
   });
+
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setAuthError("N\u00e3o autorizado.");
+          return;
+        }
+        const data = await response.json();
+        const role = data?.user?.role ?? null;
+        if (!canAccessPresence(role)) {
+          setAuthError("Voc\u00ea n\u00e3o tem permiss\u00e3o para acessar presen\u00e7a.");
+        }
+      } catch {
+        setAuthError("N\u00e3o foi poss\u00edvel validar a permiss\u00e3o.");
+      }
+    };
+
+    checkRole();
+  }, []);
+
+  if (authError) {
+    return <p className="text-sm text-red-600">{authError}</p>;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,3 +189,4 @@ export default function NovaSessaoPage() {
     </div>
   );
 }
+

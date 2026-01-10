@@ -9,6 +9,8 @@ import { StatusBadge } from "@/components/financeiro/status-badge";
 import { CurrencyDisplay } from "@/components/financeiro/currency-display";
 import { ArrowLeft, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { TipoLancamento, StatusLancamento } from "@/types/financeiro";
+import { canAccessFinance } from "@/lib/roles";
+import { useRoleGuard } from "@/lib/use-role-guard";
 
 interface Lancamento {
   id: string;
@@ -31,14 +33,22 @@ interface Lancamento {
 }
 
 export default function ContaDetailPage() {
+  const { error: accessError, loading: accessLoading } = useRoleGuard(
+    canAccessFinance,
+    "Voce nao tem permissao para acessar o financeiro."
+  );
+
   const params = useParams();
   const router = useRouter();
   const [lancamento, setLancamento] = useState<Lancamento | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (accessLoading || accessError) {
+      return;
+    }
     fetchLancamento();
-  }, [params.id]);
+  }, [accessError, accessLoading, params.id]);
 
   const fetchLancamento = async () => {
     try {
@@ -86,6 +96,14 @@ export default function ContaDetailPage() {
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString("pt-BR");
   };
+
+  if (accessError) {
+    return <p className="text-sm text-red-600">{accessError}</p>;
+  }
+
+  if (accessLoading) {
+    return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  }
 
   if (loading) {
     return (

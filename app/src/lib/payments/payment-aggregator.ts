@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { generateMonthlyPeriods, generateAnnualPeriods, MonthlyPeriod, AnnualPeriod } from './period-generator';
 
 export interface MemberSummary {
@@ -13,6 +14,10 @@ export interface MemberSummary {
   nomeCompleto: string;
   situacao: string;
   class: string | null;
+  condicaoMensalidade: string;
+  mensalidadeValor: number;
+  mensalidadeRegular: number;
+  lojaId: string;
 }
 
 export interface PaymentStatus {
@@ -39,6 +44,51 @@ interface GetPaymentGridParams {
   onlyMemberId?: string;  // Para MEMBER role (restringe a apenas 1 membro)
 }
 
+type MemberWithRates = Prisma.MemberGetPayload<{
+  select: {
+    id: true;
+    nomeCompleto: true;
+    situacao: true;
+    class: true;
+    condicaoMensalidade: true;
+    lojaId: true;
+    loja: {
+      select: {
+        valorMensalidade: true;
+        mensalidadeRegular: true;
+        mensalidadeFiliado: true;
+        mensalidadeRemido: true;
+      };
+    };
+  };
+}>;
+
+const toAmount = (value?: Prisma.Decimal | number | null) =>
+  value === null || value === undefined ? undefined : Number(value);
+
+const resolveMensalidadeValor = (member: MemberWithRates) => {
+  const loja = member.loja;
+  const fallback = toAmount(loja?.valorMensalidade) ?? 150;
+  const regular = toAmount(loja?.mensalidadeRegular) ?? fallback;
+  const filiado = toAmount(loja?.mensalidadeFiliado) ?? fallback;
+  const remido = toAmount(loja?.mensalidadeRemido) ?? fallback;
+
+  switch (member.condicaoMensalidade) {
+    case 'FILIADO':
+      return filiado;
+    case 'REMIDO':
+      return remido;
+    default:
+      return regular;
+  }
+};
+
+const resolveMensalidadeRegular = (member: MemberWithRates) => {
+  const loja = member.loja;
+  const fallback = toAmount(loja?.valorMensalidade) ?? 150;
+  return toAmount(loja?.mensalidadeRegular) ?? fallback;
+};
+
 /**
  * Busca e agrega dados de pagamentos para montar grid de acompanhamento
  *
@@ -50,7 +100,7 @@ export async function getPaymentGrid(params: GetPaymentGridParams): Promise<Paym
   const currentYear = year || new Date().getFullYear();
 
   // 1. Buscar membros
-  const members = await prisma.member.findMany({
+  const membersRaw = await prisma.member.findMany({
     where: {
       tenantId,
       ...(lojaId && { lojaId }),
@@ -62,11 +112,32 @@ export async function getPaymentGrid(params: GetPaymentGridParams): Promise<Paym
       nomeCompleto: true,
       situacao: true,
       class: true,
+      condicaoMensalidade: true,
+      lojaId: true,
+      loja: {
+        select: {
+          valorMensalidade: true,
+          mensalidadeRegular: true,
+          mensalidadeFiliado: true,
+          mensalidadeRemido: true,
+        },
+      },
     },
     orderBy: {
       nomeCompleto: 'asc',
     },
   });
+
+  const members: MemberSummary[] = membersRaw.map((member) => ({
+    id: member.id,
+    nomeCompleto: member.nomeCompleto,
+    situacao: member.situacao,
+    class: member.class,
+    condicaoMensalidade: member.condicaoMensalidade ?? 'REGULAR',
+    mensalidadeValor: resolveMensalidadeValor(member),
+    mensalidadeRegular: resolveMensalidadeRegular(member),
+    lojaId: member.lojaId,
+  }));
 
   // 2. Gerar períodos (sem banco de dados)
   const periods = type === 'MONTHLY'
@@ -140,6 +211,7 @@ export async function getPaymentGrid(params: GetPaymentGridParams): Promise<Paym
     where: {
       tenantId,
       nome: { contains: 'Mensalidade' },
+      tipo: 'RECEITA',
     },
     select: { id: true },
   });

@@ -4,6 +4,7 @@ import { use, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
+import { canAccessPresence } from "@/lib/roles";
 
 interface Member {
   id: string;
@@ -33,6 +34,7 @@ export default function MarcarPresencaPage({
   const router = useRouter();
   const { id } = use(params);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [members, setMembers] = useState<Member[]>([]);

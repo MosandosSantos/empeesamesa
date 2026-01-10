@@ -67,12 +67,12 @@ export function PotenciaForm({
     try {
       const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       if (!response.ok) {
-        setCepError("CEP nao encontrado.");
+        setCepError("CEP n\u00e3o encontrado.");
         return;
       }
       const data = await response.json();
       if (data?.erro) {
-        setCepError("CEP nao encontrado.");
+        setCepError("CEP n\u00e3o encontrado.");
         return;
       }
 
@@ -84,7 +84,7 @@ export function PotenciaForm({
         setComplemento(data.complemento);
       }
     } catch (_error) {
-      setCepError("Nao foi possivel validar o CEP agora.");
+      setCepError("N\u00e3o foi poss\u00edvel validar o CEP agora.");
     }
   };
 
@@ -104,7 +104,7 @@ export function PotenciaForm({
         </div>
       )}
 
-      <Section title="Dados da Potencia">
+      <Section title="Dados da Prefeitura">
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Nome" required>
             <input
@@ -123,13 +123,13 @@ export function PotenciaForm({
               placeholder="Ex: GOISC"
             />
           </Field>
-          <Field label="Email">
+          <Field label="E-mail">
             <input
               name="email"
               type="email"
               defaultValue={initialData?.email ?? ""}
               className="input-field"
-              placeholder="contato@potencia.org.br"
+              placeholder="contato@prefeitura.org.br"
             />
           </Field>
           <Field label="Telefone">
@@ -140,7 +140,7 @@ export function PotenciaForm({
               placeholder="Ex: (48) 99999-9999"
             />
           </Field>
-          <Field label="Website">
+          <Field label="Site">
             <input
               name="website"
               defaultValue={initialData?.website ?? ""}
@@ -151,7 +151,7 @@ export function PotenciaForm({
         </div>
       </Section>
 
-      <Section title="Endereco">
+      <Section title={"Endere\u00e7o"}>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="CEP">
             <input
@@ -176,7 +176,7 @@ export function PotenciaForm({
               placeholder="Rua Principal"
             />
           </Field>
-          <Field label="Numero">
+          <Field label={"N\u00famero"}>
             <input
               name="enderecoNumero"
               value={numero}
@@ -209,7 +209,7 @@ export function PotenciaForm({
               value={cidade}
               onChange={(e) => setCidade(e.target.value)}
               className="input-field"
-              placeholder="Florianopolis"
+              placeholder={"Florian\u00f3polis"}
             />
           </Field>
           <Field label="UF">
@@ -225,8 +225,8 @@ export function PotenciaForm({
         </div>
       </Section>
 
-      <Section title="Observacoes">
-        <Field label="Observacoes gerais">
+      <Section title={"Observa\u00e7\u00f5es"}>
+        <Field label={"Observa\u00e7\u00f5es gerais"}>
           <textarea
             name="observacoes"
             defaultValue={initialData?.observacoes ?? ""}

@@ -4,6 +4,8 @@ import { Building2, Eye, Landmark, Pencil, Plus, Trash2, Users } from "lucide-re
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { getUserFromPayload } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
+import { isLojaAdmin, isSecretaria, isTesouraria } from "@/lib/roles";
 
 async function getCurrentUser() {
   const token = (await cookies()).get("auth-token")?.value ?? null;
@@ -16,6 +18,12 @@ async function getCurrentUser() {
 
 export default async function PotenciasPage() {
   const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (isLojaAdmin(user.role) || isSecretaria(user.role) || isTesouraria(user.role)) {
+    redirect("/");
+  }
   const tenantId = user?.tenantId ?? null;
   const where =
     user?.role === "ADMIN_POT" && user.potenciaId
@@ -61,9 +69,9 @@ export default async function PotenciasPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Cadastro</p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Potencias</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Prefeituras</h1>
           <p className="text-sm text-muted-foreground">
-            Lista de potencias cadastradas e lojas vinculadas.
+            Lista de prefeituras cadastradas e lojas vinculadas.
           </p>
         </div>
         {(user?.role === "ADMIN_SAAS" || user?.role === "SYS_ADMIN") && (
@@ -72,14 +80,14 @@ export default async function PotenciasPage() {
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 hover:shadow-md"
           >
             <Plus size={16} className="text-primary-foreground" aria-hidden />
-            <span>Incluir potencia</span>
+            <span>Incluir prefeitura</span>
           </Link>
         )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <InfoCard
-          titulo="Total de potencias"
+          titulo="Total de prefeituras"
           valor={potenciasCount}
           icon={<Landmark size={18} />}
           tone="emerald"
@@ -106,10 +114,10 @@ export default async function PotenciasPage() {
                 <Th>Nome</Th>
                 <Th>Sigla</Th>
                 <Th>Cidade/UF</Th>
-                <Th>Email</Th>
+                <Th>E-mail</Th>
                 <Th>Telefone</Th>
                 <Th className="text-right">Lojas</Th>
-                <Th className="text-right">Acoes</Th>
+                <Th className="text-right">{"A\u00e7\u00f5es"}</Th>
               </tr>
             </thead>
             <tbody>
@@ -148,7 +156,7 @@ export default async function PotenciasPage() {
               {potencias.length === 0 && (
                 <tr>
                   <Td colSpan={7} className="py-8 text-center text-muted-foreground">
-                    Nenhuma potencia cadastrada.
+                    Nenhuma prefeitura cadastrada.
                   </Td>
                 </tr>
               )}

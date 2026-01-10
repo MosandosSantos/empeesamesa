@@ -40,9 +40,15 @@ interface User {
 
 const ROLE_LABELS: Record<string, string> = {
   SYS_ADMIN: "Administrador do Sistema",
-  LODGE_ADMIN: "Administrador da Loja",
-  SECRETARY: "Secretário",
-  FINANCE: "Financeiro",
+  ADMIN_SAAS: "Administrador do SaaS",
+  ADMIN_POT: "Administrador de Prefeitura",
+  ADMIN_LOJA: "Administrador da Loja",
+  SECRETARIO_LOJA: "Secretário da Loja",
+  TESOUREIRO: "Tesoureiro",
+  LODGE_ADMIN: "Administrador da Loja (legado)",
+  SECRETARY: "Secretário (legado)",
+  FINANCE: "Financeiro (legado)",
+  ADMIN: "Administrador (legado)",
   MEMBER: "Membro",
 };
 
@@ -113,9 +119,10 @@ export default function UsuariosPage() {
 
       alert("Convite reenviado com sucesso! Verifique o console.");
       await loadUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao reenviar convite:", error);
-      alert(error.message || "Erro ao reenviar convite");
+      const message = error instanceof Error ? error.message : "Erro ao reenviar convite";
+      alert(message);
     }
   }
 
@@ -137,9 +144,10 @@ export default function UsuariosPage() {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       await loadUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao deletar usuário:", error);
-      alert(error.message || "Erro ao deletar usuário");
+      const message = error instanceof Error ? error.message : "Erro ao deletar usuário";
+      alert(message);
     } finally {
       setDeleting(false);
     }
@@ -304,3 +312,4 @@ export default function UsuariosPage() {
     </div>
   );
 }
+

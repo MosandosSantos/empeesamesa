@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import MembersTable, { MemberRow } from "./members-table";
+import type { UserRole } from "@/lib/roles";
 
 type MembersResponse = {
   members: Array<{
@@ -9,6 +10,8 @@ type MembersResponse = {
     nomeCompleto: string;
     situacao: string;
     class: string | null;
+    cargo: string | null;
+    dataNascimento: string | null;
     dataAP: string | null;
     dataCM: string | null;
     dataMM: string | null;
@@ -20,6 +23,7 @@ export default function MembrosPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -36,16 +40,18 @@ export default function MembrosPage() {
         }
 
         const data: MembersResponse = await response.json();
-      const rows = data.members.map((m) => ({
-        id: m.id,
-        nome: m.nomeCompleto,
-        situacao: m.situacao,
-        classe: m.class ?? "",
-        dataAP: m.dataAP ? new Date(m.dataAP) : null,
-        dataCM: m.dataCM ? new Date(m.dataCM) : null,
-        dataMM: m.dataMM ? new Date(m.dataMM) : null,
-        dataMI: m.dataMI ? new Date(m.dataMI) : null,
-      }));
+        const rows = data.members.map((m) => ({
+          id: m.id,
+          nome: m.nomeCompleto,
+          situacao: m.situacao,
+          classe: m.class ?? "",
+          cargo: m.cargo ?? "SC",
+          dataNascimento: m.dataNascimento ? new Date(m.dataNascimento) : null,
+          dataAP: m.dataAP ? new Date(m.dataAP) : null,
+          dataCM: m.dataCM ? new Date(m.dataCM) : null,
+          dataMM: m.dataMM ? new Date(m.dataMM) : null,
+          dataMI: m.dataMI ? new Date(m.dataMI) : null,
+        }));
 
         if (mounted) {
           setMembers(rows);
@@ -61,7 +67,21 @@ export default function MembrosPage() {
       }
     };
 
+    const loadRole = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (mounted) {
+          setRole(data?.user?.role ?? null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
     loadMembers();
+    loadRole();
     return () => {
       mounted = false;
     };
@@ -75,5 +95,5 @@ export default function MembrosPage() {
     return <p className="text-sm text-red-600">{error}</p>;
   }
 
-  return <MembersTable members={members} />;
+  return <MembersTable members={members} currentRole={role} />;
 }

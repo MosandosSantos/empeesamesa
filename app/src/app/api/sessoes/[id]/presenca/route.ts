@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "@/lib/api-auth";
+import { getUserFromPayload, verifyAuth } from "@/lib/api-auth";
 import prisma from "@/lib/prisma";
 import {
   validateAttendanceBulk,
@@ -10,15 +10,28 @@ import {
   getAttendanceBlockedMessage,
   getAttendanceBlockedCode,
 } from "@/lib/session-rules";
+import { canAccessPresence, isLojaAdmin, isSecretaria } from "@/lib/roles";
 
 // POST /api/sessoes/[id]/presenca - Mark attendance (bulk)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { payload, error } = await verifyAuth(req);
+  if (error) return error;
+
+  const user = await getUserFromPayload(payload!);
+  if (!user) {
+    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  }
+
+  if (!canAccessPresence(user.role)) {
+    return NextResponse.json({ error: "Voce nao tem permissao para acessar presenca" }, { status: 403 });
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isSecretaria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    return NextResponse.json({ error: "Usuario sem loja vinculada" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -39,9 +52,13 @@ export async function POST(
     const meeting = await prisma.meeting.findUnique({
       where: {
         id: id,
-        tenantId: auth.tenantId,
+        tenantId: payload!.tenantId,
       },
     });
+
+    if (needsLojaRestriction && meeting.lojaId && meeting.lojaId != user.lojaId) {
+      return NextResponse.json({ error: "Voce nao tem permissao para esta sessao" }, { status: 403 });
+    }
 
     if (!meeting) {
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
@@ -78,7 +95,7 @@ export async function POST(
             },
           },
           create: {
-            tenantId: auth.tenantId,
+            tenantId: payload!.tenantId,
             meetingId: id,
             memberId: att.memberId,
             status: att.status,
@@ -116,9 +133,21 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { payload, error } = await verifyAuth(req);
+  if (error) return error;
+
+  const user = await getUserFromPayload(payload!);
+  if (!user) {
+    return NextResponse.json({ error: "Usuario nao encontrado" }, { status: 404 });
+  }
+
+  if (!canAccessPresence(user.role)) {
+    return NextResponse.json({ error: "Voce nao tem permissao para acessar presenca" }, { status: 403 });
+  }
+
+  const needsLojaRestriction = isLojaAdmin(user.role) || isSecretaria(user.role);
+  if (needsLojaRestriction && !user.lojaId) {
+    return NextResponse.json({ error: "Usuario sem loja vinculada" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -128,9 +157,13 @@ export async function GET(
     const meeting = await prisma.meeting.findUnique({
       where: {
         id: id,
-        tenantId: auth.tenantId,
+        tenantId: payload!.tenantId,
       },
     });
+
+    if (needsLojaRestriction && meeting.lojaId && meeting.lojaId != user.lojaId) {
+      return NextResponse.json({ error: "Voce nao tem permissao para esta sessao" }, { status: 403 });
+    }
 
     if (!meeting) {
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
@@ -139,7 +172,7 @@ export async function GET(
     const attendances = await prisma.attendance.findMany({
       where: {
         meetingId: id,
-        tenantId: auth.tenantId,
+        tenantId: payload!.tenantId,
       },
       include: {
         member: {

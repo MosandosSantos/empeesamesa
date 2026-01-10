@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuth } from '@/lib/api-auth';
+import { getUserFromPayload, verifyAuth } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
+import { canManageMembers, canViewMembers, isLojaAdmin, isPotAdmin, isSecretaria, isTesouraria } from '@/lib/roles';
 
 const toDateOrNull = (value?: string | null) => {
   if (!value) return null;
@@ -18,10 +19,31 @@ export async function GET(
   const { id } = await params;
 
   try {
+    const user = await getUserFromPayload(payload!);
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 401 });
+    }
+    if (!canViewMembers(user.role)) {
+      return NextResponse.json({ error: 'Sem permissao para visualizar membros' }, { status: 403 });
+    }
+
+    const needsLojaRestriction = isLojaAdmin(user.role) || isSecretaria(user.role) || isTesouraria(user.role);
+    const needsPotRestriction = isPotAdmin(user.role);
+
+    if (needsLojaRestriction && !user.lojaId) {
+      return NextResponse.json({ error: 'Usuario sem loja vinculada' }, { status: 403 });
+    }
+
+    if (needsPotRestriction && !user.potenciaId) {
+      return NextResponse.json({ error: 'Usuario sem prefeitura vinculada' }, { status: 403 });
+    }
+
     const member = await prisma.member.findFirst({
       where: {
         id,
         tenantId: payload!.tenantId,
+        ...(needsLojaRestriction ? { lojaId: user.lojaId } : {}),
+        ...(needsPotRestriction ? { loja: { potenciaId: user.potenciaId } } : {}),
       },
     });
 
@@ -52,12 +74,24 @@ export async function PUT(
   const { id } = await params;
 
   try {
+    const user = await getUserFromPayload(payload!);
+    if (!user) {
+      return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 401 });
+    }
+    if (!canManageMembers(user.role)) {
+      return NextResponse.json({ error: 'Sem permissao para editar membros' }, { status: 403 });
+    }
+    if ((isLojaAdmin(user.role) || isSecretaria(user.role)) && !user.lojaId) {
+      return NextResponse.json({ error: 'Usuario sem loja vinculada' }, { status: 403 });
+    }
+
     const body = await req.json();
 
     const updated = await prisma.member.updateMany({
       where: {
         id,
         tenantId: payload!.tenantId,
+        ...(isLojaAdmin(user.role) || isSecretaria(user.role) ? { lojaId: user.lojaId } : {}),
       },
       data: {
         nomeCompleto: body.nomeCompleto,
@@ -75,6 +109,8 @@ export async function PUT(
         celular: body.celular ?? "",
         telefoneUrgencia: body.telefoneUrgencia ?? "",
         enderecoLogradouro: body.enderecoLogradouro ?? "",
+        enderecoNumero: body.enderecoNumero ?? "",
+        enderecoComplemento: body.enderecoComplemento ?? "",
         enderecoCep: body.enderecoCep ?? "",
         enderecoBairro: body.enderecoBairro ?? "",
         enderecoCidade: body.enderecoCidade ?? "",
@@ -83,6 +119,7 @@ export async function PUT(
         rito: body.rito ?? null,
         dataEntradaLojaAtual: toDateOrNull(body.dataEntradaLojaAtual),
         situacao: body.situacao ?? "ATIVO",
+        condicaoMensalidade: body.condicaoMensalidade ?? "REGULAR",
         class: body.class ?? null,
         dataMESA: toDateOrNull(body.dataMESA),
         dataEN: toDateOrNull(body.dataEN),
